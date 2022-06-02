@@ -1,25 +1,20 @@
 from create_excel import create_excel_files, gather_info_for_worksheets
 from preprocess import preprocess_base, preprocess_prescricoes, preprocess_evolucao
-from dbcomms import retrieve_last_month_data_from_dbprod
+from dbcomms import retrieve_last_month_data_from_dbtasy
 from send_email import send_standard_mail_prod, send_standard_mail_test
 from src.helper_functions import delete_month_files, print_with_time
 import traceback
 import argparse
 
-parser = argparse.ArgumentParser(description="My parser")
-parser.add_argument('--teste', dest='test', action='store_true')
-parser.set_defaults(test=False)
-args = parser.parse_args()
-test = args.test
-   
 
-def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendEmail=True, test=test, delete_files=True):
+def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendEmail=True, test=False, delete_files=True):
     print()
+    print('*'*80)
     if test:
         print('TESTE!')
     success = True
     if download_data:
-        success = retrieve_last_month_data_from_dbprod()     
+        success = retrieve_last_month_data_from_dbtasy()     
     
     if success:
         if preprocess:
@@ -87,8 +82,12 @@ def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendE
 
     
 if __name__ == '__main__':
-    ExecuteProgram()
-    # ExecuteProgram(test=True)
+    parser = argparse.ArgumentParser(description="My parser")
+    parser.add_argument('--teste', dest='test', action='store_true')
+    parser.set_defaults(test=False)
+    args = parser.parse_args()
+    test = args.test
+    ExecuteProgram(test=test)
     # ExecuteProgram(download_data=False, preprocess=False, create_files=True,
-    #                sendEmail=True, test=True, delete_files=True)
+    #                sendEmail=True, test=test, delete_files=True)
     

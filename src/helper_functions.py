@@ -162,27 +162,19 @@ def delete_month_files():
     os_remove(selecionados_fn_vergueiro)
     
     
-def get_target_month_and_year():
+def get_last_month_and_year():
     today = datetime.today()
-    last_month, year = today.month - 1, today.year
-    if last_month == 0:
-        last_month = 12
-        year -= 1
-    return last_month, year
-
-
-def get_first_and_last_day_of_month():
-    last_month, year = get_target_month_and_year()
-    first_day_of_month = datetime(year=year, month=last_month, day=1)
-    n_days_in_month = calendar.monthrange(year=year, month=last_month)[1]
-    last_day_of_month = datetime(year=year, month=last_month, day=n_days_in_month)
-    return first_day_of_month, last_day_of_month
+    target_month, target_year = today.month - 1, today.year
+    if target_month == 0:
+        target_month = 12
+        target_year -= 1
+    return target_month, target_year, today.month, today.year
 
 
 def get_selecionados_fn_for_month(unidade='ambas'):
     assert unidade.lower() in ['ambas', 'paulista', 'vergueiro'], print("Unidade precisa ser 'ambas', 'paulista' ou 'vergueiro'")
-    last_month, year = get_target_month_and_year()
-    target_date = datetime(year=year, month=last_month, day=1)
+    target_month, year_of_target_month, _, _ = get_last_month_and_year()
+    target_date = datetime(year=year_of_target_month, month=target_month, day=1)
     if unidade.lower() == 'ambas' or unidade.lower() == 'paulista':
         selecionados_fn_paulista = PROCESSED_DATA_DIR / f"Selecionados_Paulista_{target_date.strftime('%m-%Y')}.xlsx"
         if unidade.lower() == 'paulista':
