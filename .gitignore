@@ -1,0 +1,7 @@
+data/*/*.pickle
+.vscode/
+__pycache__/
+credentials.py
+*.ipynb
+instantclient_21_5/
+notebooks/*/
