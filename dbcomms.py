@@ -68,7 +68,7 @@ def execute_query_pandas(query, conn):
 
 # Script para baixar dados do HAOC_TASY_PROD
 def retrieve_data_from_dbprod_using_dates(start_date, end_date):
-    print_with_time(f"Baixando dados do DB_OD_PROD\nDe {start_date} até {end_date}")
+    print_with_time(f"Baixando dados do DB_ODI_PROD\nDe {start_date} até {end_date}")
     queries = read_queries_from_file()
     conn = create_db_conn('prod')
     success = True

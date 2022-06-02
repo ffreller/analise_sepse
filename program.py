@@ -4,9 +4,19 @@ from dbcomms import retrieve_last_month_data_from_dbprod
 from send_email import send_standard_mail_prod, send_standard_mail_test
 from src.helper_functions import delete_month_files, print_with_time
 import traceback
+import argparse
+
+parser = argparse.ArgumentParser(description="My parser")
+parser.add_argument('--teste', dest='test', action='store_true')
+parser.set_defaults(test=False)
+args = parser.parse_args()
+test = args.test
    
 
-def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendEmail=True, prod=True, delete_files=True):
+def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendEmail=True, test=test, delete_files=True):
+    print()
+    if test:
+        print('TESTE!')
     success = True
     if download_data:
         success = retrieve_last_month_data_from_dbprod()     
@@ -58,10 +68,10 @@ def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendE
         
         if sendEmail:
             try:
-                if prod:
-                    send_standard_mail_prod()
-                else:
+                if test:
                     send_standard_mail_test()
+                else:
+                    send_standard_mail_prod()
             except:
                 print_with_time('Erro ao enviar emails')
                 print(traceback.format_exc())
@@ -78,7 +88,7 @@ def ExecuteProgram(download_data=True, preprocess=True, create_files=True, sendE
     
 if __name__ == '__main__':
     ExecuteProgram()
-    # ExecuteProgram(prod=False)
+    # ExecuteProgram(test=True)
     # ExecuteProgram(download_data=False, preprocess=False, create_files=True,
-    #                sendEmail=True, prod=False, delete_files=True)
+    #                sendEmail=True, test=True, delete_files=True)
     
