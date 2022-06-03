@@ -1,6 +1,7 @@
 import pandas as pd
-from src.helper_functions import text_contains_sepse_expression, text_contains_sepse_expression_with_text, campo_sepse_med, remove_campo_sepse_from_text_med,\
-    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text, print_with_time, strip_html_tags
+from src.helper_functions import text_contains_sepse_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
+    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text, print_with_time 
+from src.HTMLStripper import strip_html_tags
 from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
 
 
@@ -79,11 +80,10 @@ def preprocess_evolucao(enfermagem):
         df0['EVOLUCAO_MED'] = df0['EVOLUCAO_MED'].apply(remove_antecedentes_from_text)
         # Removendo campo sepse da evolução médica (para avaliar a presença de expressões sem levá-lo em consideração)
         df0['EVOLUCAO_MED2'] = df0['EVOLUCAO_MED'].apply(remove_campo_sepse_from_text_med)
-        # Criando coluna que indica se evolução médica do paciente faz referência a alguma expressão relacionada a sepse
-        df0['sepse_expression_evolucao_med'] = df0['EVOLUCAO_MED2'].apply(text_contains_sepse_expression)
-        # Criando coluna para indicar qual foi a expressão sepse encontrada, se houve alguma
-        df0['match'] = df0['EVOLUCAO_MED2'].apply(text_contains_sepse_expression_with_text)
-        # Deletando colunas que não serão mais utilizada
+        # Criando coluna que indica se evolução médica do paciente faz referência a alguma expressão relacionada a sepse e 
+        # coluna para indicar qual foi a expressão sepse encontrada, se houve alguma
+        df0[['sepse_expression_evolucao_med', 'match']] =\
+            df0.apply(lambda x: text_contains_sepse_expression(x['EVOLUCAO_MED2']), axis=1, result_type="expand")
         df0.drop(['DS_EVOLUCAO_MED', 'EVOLUCAO_MED2'], axis=1, inplace=True)
         # Ordenando por número de atendimento e data de evolução
         df0.sort_values(['NR_ATENDIMENTO','DT_EVOLUCAO_MED'], inplace=True)

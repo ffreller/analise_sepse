@@ -1,4 +1,5 @@
 data/*/*.pickle
+data/*/*.xlsx
 .vscode/
 __pycache__/
 credentials.py

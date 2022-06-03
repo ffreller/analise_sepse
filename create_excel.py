@@ -199,25 +199,41 @@ def create_df_equipe_sepse(df_main, df_mov):
 def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico):
     print_with_time('Criando arquivos excel')
     df_equipe_sepse = create_df_equipe_sepse(df_main, df_movimentacoes)
-    df_main.drop('Condição de saída', axis=1, inplace=True)
+    
+    n_atends_paulista = df_main[df_main['Unidade'] == 'Paulista']['Número de Atendimento'].unique().tolist()
+    n_atends_vergueiro = df_main[df_main['Unidade'] == 'Vergueiro']['Número de Atendimento'].unique().tolist()
+    df_main_ = df_main.copy()
+    df_main_.drop('Unidade', axis=1, inplace=True)
+    df_main_.drop('Condição de saída', axis=1, inplace=True)
+    
     all_expressions = df_evol_med['match'].unique()
     df_evol_med['EVOLUCAO_MED'] = df_evol_med['EVOLUCAO_MED'].apply(
         lambda x: apply_rtf_and_bold_expression(x, all_expressions))
     
-    sheet_names = ['Controle equipe sepse', 'Pacientes coletados', 'Evoluções médicas', 'Evoluções enfermagem', 'Prescrições Protocolo Sepse',
-                   'Movimentações na UTI', 'Hemocultura', 'Antibiótico']
-
-    options = {}
-    options['strings_to_formulas'] = False
-    options['strings_to_urls'] = False
+    def dfs_generator(*args):
+        for arg in args:
+            yield arg.copy()
+        
+    def sheet_names_generator():
+        yield 'Controle equipe sepse'
+        yield 'Pacientes coletados'
+        yield 'Evoluções médicas'
+        yield 'Evoluções enfermagem'
+        yield 'Prescrições Protocolo Sepse'
+        yield 'Movimentações na UTI'
+        yield 'Hemocultura'
+        yield 'Antibiótico'
+        
+    options = {'strings_to_formulas' : False, 
+               'strings_to_urls' : False}
+    align = 'center'
+    col_width = 17.4
+    
     for unidade in ['Paulista', 'Vergueiro']:
-        selecionados_fn = get_selecionados_fn_for_month(unidade=unidade)
-        df_main_, df_evol_med_, df_evol_enf_, df_prescricoes_, df_movimentacoes_, df_hemocultura_, df_antibiotico_, df_equipe_sepse_ = \
-            df_main.copy(), df_evol_med.copy(), df_evol_enf.copy(), df_prescricoes.copy(), df_movimentacoes.copy(), df_hemocultura.copy(), df_antibiotico.copy(), df_equipe_sepse.copy()
-            
+        selecionados_fn = get_selecionados_fn_for_month(unidade=unidade)    
         writer = pd.ExcelWriter(selecionados_fn, engine='xlsxwriter', engine_kwargs={'options':options})
         workbook  = writer.book
-        align = 'center'
+        
         index_format = workbook.add_format({
             'text_wrap': True,
             'bold':True,
@@ -231,21 +247,25 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
         percent_fmt = workbook.add_format({
             'num_format': '0.00%',
             'align': align
-        })
-        col_width = 17.4
+        })      
         
-        n_atends_unidade = df_main_[df_main_['Unidade'] == unidade]['Número de Atendimento'].unique().tolist()
-        df_main_.drop('Unidade', axis=1, inplace=True)
-        dfs = [df_equipe_sepse_, df_main_, df_evol_med_, df_evol_enf_, df_prescricoes_, df_movimentacoes_, df_hemocultura_, df_antibiotico_]
-        for i, df_ in enumerate(dfs):
+        n_atends_unidade = n_atends_paulista if unidade == 'Paulista' else n_atends_vergueiro
+                
+        # Iterador para percorrer os dfs e os nomes das planilhas
+        dfs_sheet_names = zip(dfs_generator(df_equipe_sepse, df_main_, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico),
+                              sheet_names_generator())
+        for i in range(8):
+            df_, sheet_name = next(dfs_sheet_names)
+
+            # Dropando pacientes que não são da unidade
             if i <= 1:
                 n_atend_col = 'Número de Atendimento'
             else:
                 n_atend_col = 'NR_ATENDIMENTO'
+            
             to_drop = df_.loc[~df_[n_atend_col].isin(n_atends_unidade)].index
             df_.drop(to_drop, inplace=True)
-        
-        for df_, sheet_name in zip(dfs, sheet_names):
+            
             if len(df_) == 0:
                 print_with_time(f"AVISO: Planilha '{sheet_name}' da {unidade} está vazia")
                 continue
