@@ -142,4 +142,14 @@ def get_selecionados_fn_for_month(unidade='ambas'):
         if unidade.lower() == 'vergueiro':
             return selecionados_fn_vergueiro
     return selecionados_fn_paulista, selecionados_fn_vergueiro
+
+
+def dfs_generator(*args):
+    for arg in args:
+        yield arg.copy()
+
+  
+def sheet_names_generator(*args):
+    for arg in args:
+        yield arg
     

@@ -64,7 +64,7 @@ def execute_query_pandas(query, conn):
 
 def read_queries_from_file(fpath=None):
     if not fpath:
-        fpath = 'data/sql_queries.sql'
+        fpath = 'data/sql_queries_sepse.sql'
     with open(fpath, 'r') as f:
         sqlFile = f.read()
     query_names = re.findall('-- (.*)', sqlFile)

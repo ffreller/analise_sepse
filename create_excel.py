@@ -1,7 +1,7 @@
 import pandas as pd
 from src.definitions import INTERIM_DATA_DIR, RAW_DATA_DIR
-from src.helper_functions import print_with_time, get_time_between_evolucao_med_com_sepse,\
-    apply_rtf_and_bold_expression, hemocultura_antibiotico_dentro_do_periodo, get_selecionados_fn_for_month
+from src.helper_functions import print_with_time, get_time_between_evolucao_med_com_sepse, apply_rtf_and_bold_expression, \
+    hemocultura_antibiotico_dentro_do_periodo, get_selecionados_fn_for_month, dfs_generator, sheet_names_generator
 
 cols_names = {
     'NR_ATENDIMENTO':'Número de Atendimento',
@@ -209,20 +209,6 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
     all_expressions = df_evol_med['match'].unique()
     df_evol_med['EVOLUCAO_MED'] = df_evol_med['EVOLUCAO_MED'].apply(
         lambda x: apply_rtf_and_bold_expression(x, all_expressions))
-    
-    def dfs_generator(*args):
-        for arg in args:
-            yield arg.copy()
-        
-    def sheet_names_generator():
-        yield 'Controle equipe sepse'
-        yield 'Pacientes coletados'
-        yield 'Evoluções médicas'
-        yield 'Evoluções enfermagem'
-        yield 'Prescrições Protocolo Sepse'
-        yield 'Movimentações na UTI'
-        yield 'Hemocultura'
-        yield 'Antibiótico'
         
     options = {'strings_to_formulas' : False, 
                'strings_to_urls' : False}
@@ -252,8 +238,12 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
         n_atends_unidade = n_atends_paulista if unidade == 'Paulista' else n_atends_vergueiro
                 
         # Iterador para percorrer os dfs e os nomes das planilhas
-        dfs_sheet_names = zip(dfs_generator(df_equipe_sepse, df_main_, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico),
-                              sheet_names_generator())
+        dfs_sheet_names =zip(
+            dfs_generator(df_equipe_sepse, df_main_, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico),
+            sheet_names_generator('Controle equipe sepse', 'Pacientes coletados', 'Evoluções médicas', 'Evoluções enfermagem',
+                                  'Prescrições Protocolo Sepse','Movimentações na UTI', 'Hemocultura', 'Antibiótico')
+        )
+        
         for i in range(8):
             df_, sheet_name = next(dfs_sheet_names)
 
