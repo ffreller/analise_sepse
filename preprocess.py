@@ -96,11 +96,12 @@ def preprocess_evolucao(enfermagem):
         # coluna para indicar qual foi a expressão sepse encontrada, se houve alguma
         regex_string = '(choque *(s(e|é)ptico|refrat(a|á)rio|misto))|(seps(e|is))|(septicemia)'
         regex_half_string = get_regex_suspeita_interrogacao(regex_string)
-        df0[['sepse_expression_evolucao_med', 'match']] =\
-            df0.apply(lambda x: text_contains_expression(
-                text=x['EVOLUCAO_MED2'], regex_string=regex_string, regex_half_string=regex_half_string),
-                      axis=1, result_type="expand"
+        df0[['sepse_expression_evolucao_med', 'match']] = df0.apply(
+            lambda x: text_contains_expression(
+                text=x['EVOLUCAO_MED2'], regex_string=regex_string, regex_half_string=regex_half_string
+                ), axis=1, result_type="expand"
             )
+        logger.debug("Soma da coluna 'sepse_expression_evolucao_med': %s" % df0['sepse_expression_evolucao_med'].sum())
         df0.drop(['DS_EVOLUCAO_MED', 'EVOLUCAO_MED2'], axis=1, inplace=True)
         # Ordenando por número de atendimento e data de evolução
         df0.sort_values(['NR_ATENDIMENTO','DT_EVOLUCAO_MED'], inplace=True)
@@ -108,8 +109,8 @@ def preprocess_evolucao(enfermagem):
         
     # Salvar dataset criado
     df0.to_pickle(INTERIM_DATA_DIR/pickle_fn)
-    unidade = 'da enfermagem' if enfermagem else 'médicas'
-    logger.debug("Sucesso ao processar evoluções %s" % unidade)
+    str_tipo = 'da enfermagem' if enfermagem else 'médicas'
+    logger.debug("Sucesso ao processar evoluções %s" % str_tipo)
 
     
 if __name__ == '__main__':

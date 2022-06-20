@@ -1,4 +1,5 @@
 import posixpath
+from xml.etree.ElementTree import SubElement
 
 from numpy import half
 
@@ -50,13 +51,14 @@ def text_contains_expression(text, regex_string, regex_half_string):
                     logger.warning('Regex (half) com lista de strings: %s' % half_results)
                 if len(half_results) > len(positive_results):
                     logger.warning('PROBLEMA REGEX: Texto:%s POsitive:%s\n Half:%s\n' % (text, positive_results, half_results))
+                half_results = [subelement for element in half_results for subelement in element]
                 return .5, max(half_results, key=len)
             
             if isinstance(positive_results[0], str):
                 from logging import getLogger
                 logger = getLogger('standard')
                 logger.warning('Regex (positive) com lista de strings: %s' % positive_results)
-                
+            positive_results = [subelement for element in positive_results for subelement in element]   
             return 1, max(positive_results, key=len) 
     return 0, 'NÃO'
 
@@ -113,13 +115,8 @@ def apply_rtf_and_bold_expression(text, all_expressions):
             continue
         if expression in new_text:
             new_text = new_text.replace(expression, f"\\b {expression} \\b0")
-        elif expression.capitalize() in new_text:
-            new_text = new_text.replace(expression.capitalize(), f"\\b {expression.capitalize()} \\b0")
-        else:
-            new_text = new_text.replace(expression.title(), f"\\b {expression.title()} \\b0")
-        
-        new_text = new_text.replace('\\b ', '\\cf2\\b ')
-        new_text = new_text.replace(' \\b0', ' \\b0\\cf')
+            new_text = new_text.replace('\\b ', '\\cf2\\b ')
+            new_text = new_text.replace(' \\b0', ' \\b0\\cf')
     return new_text 
 
 

@@ -1,7 +1,7 @@
 from preprocess import preprocess_base
 
 
-def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True, send_mail=True, delete_files=True):
+def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True, send_mail=True):
     from create_excel import create_excel_files, gather_info_for_worksheets
     from preprocess import preprocess_base, preprocess_prescricoes, preprocess_evolucao
     from dbcomms import retrieve_last_month_data_from_dbtasy
@@ -70,7 +70,6 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
                 error_logger.error('Erro ao enviar emails: %s' % format_exc())
                 return
 
-        if delete_files:
             try:
                 delete_month_files()
             except Exception:
