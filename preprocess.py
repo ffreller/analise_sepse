@@ -57,15 +57,15 @@ def preprocess_evolucao(enfermagem):
     from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
     from pandas import read_pickle
     from logging import getLogger
-    from src.helper_functions import text_contains_sepse_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
-    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text
+    from src.helper_functions import text_contains_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
+    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text, get_regex_suspeita_interrogacao
     from src.HTMLStripper import strip_html_tags
 
     logger = getLogger('standard')
 
     pickle_fn = 'Evolução_Enfermagem.pickle' if enfermagem else 'Evolução_Médica.pickle'
     #Lendo o dataset
-    df0 = read_pickle(RAW_DATA_DIR/pickle_fn)        
+    df0 = read_pickle(RAW_DATA_DIR/pickle_fn)
     df0['EVOLUCAO'] = df0['DS_EVOLUCAO'].apply(my_rtf_to_text)
     assert df0['EVOLUCAO'].isna().sum() == 0,\
         "Valores nan na coluna da evolucao {'enfermagem' if enfermagem else 'médica'}"
@@ -87,14 +87,20 @@ def preprocess_evolucao(enfermagem):
         df0['cuidado_paliativo'] = df0['EVOLUCAO_MED'].apply(text_contains_cuidados_paliativos)
         # Criando coluna que indica se evolução médica do paciente faz referência a acionamento de código amarelo
         df0['CODIGO_AMARELO_EVOL'] = df0['EVOLUCAO_MED'].apply(text_contains_codigo_amarelo)
-        # Remove antecendetes da evolução médica
+        # Remove antecedentes da evolução médica
         df0['EVOLUCAO_MED'] = df0['EVOLUCAO_MED'].apply(remove_antecedentes_from_text)
         # Removendo campo sepse da evolução médica (para avaliar a presença de expressões sem levá-lo em consideração)
         df0['EVOLUCAO_MED2'] = df0['EVOLUCAO_MED'].apply(remove_campo_sepse_from_text_med)
+        df0['EVOLUCAO_MED2'] = df0['EVOLUCAO_MED2'].str.replace('oriento antes sobre as possíveis complicações ITU, sepse', '')
         # Criando coluna que indica se evolução médica do paciente faz referência a alguma expressão relacionada a sepse e 
         # coluna para indicar qual foi a expressão sepse encontrada, se houve alguma
+        regex_string = '(choque *(s(e|é)ptico|refrat(a|á)rio|misto))|(seps(e|is))|(septicemia)'
+        regex_half_string = get_regex_suspeita_interrogacao(regex_string)
         df0[['sepse_expression_evolucao_med', 'match']] =\
-            df0.apply(lambda x: text_contains_sepse_expression(x['EVOLUCAO_MED2']), axis=1, result_type="expand")
+            df0.apply(lambda x: text_contains_expression(
+                text=x['EVOLUCAO_MED2'], regex_string=regex_string, regex_half_string=regex_half_string),
+                      axis=1, result_type="expand"
+            )
         df0.drop(['DS_EVOLUCAO_MED', 'EVOLUCAO_MED2'], axis=1, inplace=True)
         # Ordenando por número de atendimento e data de evolução
         df0.sort_values(['NR_ATENDIMENTO','DT_EVOLUCAO_MED'], inplace=True)

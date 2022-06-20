@@ -1,3 +1,8 @@
+import posixpath
+
+from numpy import half
+
+
 def campo_sepse_med(text):
     if type(text) == str:
         if "Sepse :" in text:
@@ -30,26 +35,48 @@ def remove_antecedentes_from_text(text):
     return text
 
 
-def text_contains_sepse_expression(text):
-    import re
-    key_words_pattern_sepse = re.compile('choque *(s(e|é)ptico|refrat(a|á)rio|misto)|seps(e|is)|septicemia', re.IGNORECASE)
-    key_words_pattern_sepse_meio = re.compile('(choque *(s(e|é)ptico|refrat(a|á)rio|misto) *\?|seps(e|is) *\?|septicemia *\?)|(suspeita *de *choque *(s(e|é)ptico|refrat(a|á)rio|misto)|suspeita *de *seps(e|is)|suspeita *de *septicemia)', re.IGNORECASE)
+def text_contains_expression(text, regex_string, regex_half_string):
     if type(text) == str:
-        if 'paciente comparece para biopsia de prostata' not in text.lower().replace('ó', 'o'):
-            match = key_words_pattern_sepse.search(text)
-            if match:
-                match_meio = key_words_pattern_sepse_meio.search(text)
-                if match_meio:
-                    return 0.5, match_meio.group(0)
-                return 1, match.group(0)         
+        from re import compile, findall, IGNORECASE
+        key_words_pattern_sepse = compile(regex_string, IGNORECASE)
+        key_words_pattern_sepse_half = compile(regex_half_string, IGNORECASE)
+        positive_results = findall(key_words_pattern_sepse, text)
+        if positive_results:
+            half_results = findall(key_words_pattern_sepse_half, text)
+            if len(half_results) >= len(positive_results):
+                from logging import getLogger
+                logger = getLogger('standard')
+                if isinstance(half_results[0], str):
+                    logger.warning('Regex (half) com lista de strings: %s' % half_results)
+                if len(half_results) > len(positive_results):
+                    logger.warning('PROBLEMA REGEX: Texto:%s POsitive:%s\n Half:%s\n' % (text, positive_results, half_results))
+                return .5, max(half_results, key=len)
+            
+            if isinstance(positive_results[0], str):
+                from logging import getLogger
+                logger = getLogger('standard')
+                logger.warning('Regex (positive) com lista de strings: %s' % positive_results)
+                
+            return 1, max(positive_results, key=len) 
     return 0, 'NÃO'
 
 
+def get_regex_suspeita_interrogacao(text):
+    expressions = text.split(')|(')
+    expressions[0] = expressions[0][1:]
+    expressions[-1] = expressions[-1][:-1]
+    results = []
+    for expression in expressions:
+        results.append(f'({expression} *\?)')
+        results.append(f'(suspeita *de *{expression})')
+    return f"({'|'.join(results)})"
+
+
 def text_contains_cuidados_paliativos(text):
-    import re
-    key_words_pattern_paliativo = re.compile('cuidados? paliativos?', re.IGNORECASE)
-    key_words_patter_paliativo_ignorar = re.compile('cuidados paliativos *: * (sem limitação de suporte orgânico invasivo)|não', re.IGNORECASE)
     if type(text) == str:
+        import re
+        key_words_pattern_paliativo = re.compile('cuidados? paliativos?', re.IGNORECASE)
+        key_words_patter_paliativo_ignorar = re.compile('cuidados paliativos *: * (sem limitação de suporte orgânico invasivo)|não', re.IGNORECASE)
         match = key_words_pattern_paliativo.search(text)
         if match:
             match_ignorar = key_words_patter_paliativo_ignorar.search(text)
