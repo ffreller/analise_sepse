@@ -9,7 +9,6 @@ def preprocess_base():
                     'DT_SAIDA_GRUPO','DT_CODIGO_AMARELO', 'CD_ESTABELECIMENTO']
     cid_sepses = 'A41'
     
-
     #Lendo o dataset
     df0 = read_pickle(RAW_DATA_DIR/'Dados_Básicos.pickle')
     #Filtrando colunas que serão usadas

@@ -260,7 +260,7 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
             df_.drop(to_drop, inplace=True)
             
             if df_.empty:
-                logger.warning(f"AVISO: Planilha '{sheet_name}' da {unidade} está vazia")
+                logger.warning("Planilha '%s' da %s está vazia" % (sheet_name, unidade))
                 continue
             df_.to_excel(writer, sheet_name=sheet_name, index=False)
             colunas = df_.columns

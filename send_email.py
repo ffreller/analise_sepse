@@ -66,6 +66,5 @@ def send_standard_mail(prod=False):
     logger.debug('Email enviado com sucesso! Destinatários: %s' % ', '.join(email_destinations))
 
 
-
 if __name__ == '__main__':
-    send_standard_mail()
+    send_standard_mail(prod=False)

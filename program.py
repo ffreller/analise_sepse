@@ -64,10 +64,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
         
         if send_mail:
             try:
-                if prod:
-                    send_standard_mail(prod=True)
-                else:
-                    send_standard_mail(prod=False)
+                send_standard_mail(prod=prod)
             except Exception:
                 logger.error('Erro ao enviar emails: %s' % format_exc())
                 error_logger.error('Erro ao enviar emails: %s' % format_exc())
@@ -94,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-email', dest='no_email', action='store_true')
     parser.add_argument('--no-download', dest='no_download', action='store_true')
     parser.add_argument('--no-preprocess', dest='no_preprocess', action='store_true')
-    parser.set_defaults(test=False)
+    parser.set_defaults(prod=False)
     parser.set_defaults(no_email=False)
     parser.set_defaults(no_download=False)
     parser.set_defaults(no_preprocess=False)
