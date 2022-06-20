@@ -1,18 +1,17 @@
-import pandas as pd
-from src.helper_functions import text_contains_sepse_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
-    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text, print_with_time 
-from src.HTMLStripper import strip_html_tags
-from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
+def preprocess_base():
+    from pandas import read_pickle, to_datetime
+    from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
+    from logging import getLogger
 
-
-base_useful_cols = ['NR_ATENDIMENTO', 'NR_PRONTUARIO', 'NM_PESSOA_FISICA', 'DT_NASCIMENTO','DT_ENTRADA',
+    logger = getLogger('standard')
+    base_useful_cols = ['NR_ATENDIMENTO', 'NR_PRONTUARIO', 'NM_PESSOA_FISICA', 'DT_NASCIMENTO','DT_ENTRADA',
                     'DT_ALTA', 'IE_SEXO', 'ID_MEDICO', 'DS_CLINICA', 'CD_DOENCA', 'DS_MOTIVO_ALTA', 'DT_ENTRADA_GRUPO',
                     'DT_SAIDA_GRUPO','DT_CODIGO_AMARELO', 'CD_ESTABELECIMENTO']
-cid_sepses = 'A41'
-def preprocess_base():
-    print_with_time('Processando datset base')
+    cid_sepses = 'A41'
+    
+
     #Lendo o dataset
-    df0 = pd.read_pickle(RAW_DATA_DIR/'Dados_Básicos.pickle')
+    df0 = read_pickle(RAW_DATA_DIR/'Dados_Básicos.pickle')
     #Filtrando colunas que serão usadas
     df0 = df0.loc[:, base_useful_cols]
     # Criando coluna referente à presença de CID de sepse
@@ -21,47 +20,60 @@ def preprocess_base():
     for col in ['DT_ENTRADA_GRUPO', 'DT_SAIDA_GRUPO']:
         cond1  = df0[col] < df0['DT_ENTRADA']
         cond2 = df0[col] > df0['DT_ALTA']
-        df0.loc[cond1 | cond2, col] = pd.to_datetime('NaT')
+        df0.loc[cond1 | cond2, col] = to_datetime('NaT')
         
     # Criando coluna que indica acionamento do código amarelo
     df0['CODIGO_AMARELO'] = df0['DT_CODIGO_AMARELO'].isna() == False
     # Criando coluna que indicado entra no grupo sepse
     df0['ENTRADA_GRUPO'] = df0['DT_ENTRADA_GRUPO'].isna() == False
 
+    assert df0['NR_ATENDIMENTO'].is_unique, "Há números de atendimento duplicados"
+    
     # Salvar dataset criado
     df0.to_pickle(INTERIM_DATA_DIR/'base.pickle')
-    print_with_time('Sucesso ao processar datset base')
+    logger.debug('Sucesso ao processar dataset base')
 
 
-##############################################################################
-colunas_prescricao = ['NR_ATENDIMENTO', 'DT_ITEM_PRESCRITO', 'DT_ITEM_EXECUTADO', 'Noradrenalina', 'PROTOCOLO_SEPSE', 'NR_PRESCRICAO']
-codigos_noradrenalina = [481471, 259826, 429303, 1434, 406272]
 def preprocess_prescricoes():
-    print_with_time('Processando prescrições')
+    from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
+    from pandas import read_pickle
+    from logging import getLogger
+
+    logger = getLogger('standard')
+    colunas_prescricao = ['NR_ATENDIMENTO', 'DT_ITEM_PRESCRITO', 'DT_ITEM_EXECUTADO', 'Noradrenalina', 'PROTOCOLO_SEPSE', 'NR_PRESCRICAO']
+    codigos_noradrenalina = [481471, 259826, 429303, 1434, 406272]
+
     #Lendo o dataset
-    df0 = pd.read_pickle(RAW_DATA_DIR/'Prescrição_Medicamentos.pickle')
+    df0 = read_pickle(RAW_DATA_DIR/'Prescrição_Medicamentos.pickle')
     df0['Noradrenalina'] = df0['CD_MATERIAL'].isin(codigos_noradrenalina)
     df0.loc[~df0['DS_TIPO_PROTOCOLO'].isna(), 'PROTOCOLO_SEPSE'] = True
     df0['PROTOCOLO_SEPSE'] = df0['PROTOCOLO_SEPSE'].fillna(False)
     df0 = df0.loc[:, colunas_prescricao].copy()
     # Salvar dataset criado
     df0.to_pickle(INTERIM_DATA_DIR/'prescricoes.pickle')
-    print_with_time('Sucesso ao processar prescrições')
-    
-    
-#############################################################################
+    logger.debug('Sucesso ao processar prescrições')
+       
+
 def preprocess_evolucao(enfermagem):
-    print_with_time(f"Processando evoluções {'da enfermagem' if enfermagem else 'médicas'}")
+    from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
+    from pandas import read_pickle
+    from logging import getLogger
+    from src.helper_functions import text_contains_sepse_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
+    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text
+    from src.HTMLStripper import strip_html_tags
+
+    logger = getLogger('standard')
+
     pickle_fn = 'Evolução_Enfermagem.pickle' if enfermagem else 'Evolução_Médica.pickle'
     #Lendo o dataset
-    df0 = pd.read_pickle(RAW_DATA_DIR/pickle_fn)        
+    df0 = read_pickle(RAW_DATA_DIR/pickle_fn)        
     df0['EVOLUCAO'] = df0['DS_EVOLUCAO'].apply(my_rtf_to_text)
     assert df0['EVOLUCAO'].isna().sum() == 0,\
-        print(f"Erro: valores nan na coluna da evolucao {'enfermagem' if enfermagem else 'médica'}")
+        "Valores nan na coluna da evolucao {'enfermagem' if enfermagem else 'médica'}"
     df0['EVOLUCAO'] = df0['EVOLUCAO'].apply(strip_html_tags)
     df0['EVOLUCAO'] = df0['EVOLUCAO'].str.replace(u'\xa0', u' ')
     
-    # Mudando nome das colunas nos datsets de evolução para diferenciá-los futuramente
+    # Mudando nome das colunas nos datasets de evolução para diferenciá-los futuramente
     suffix = '_ENF' if enfermagem else '_MED'
     df0.columns = [col+suffix if col != 'NR_ATENDIMENTO' else col for col in df0.columns]
     
@@ -91,7 +103,8 @@ def preprocess_evolucao(enfermagem):
         
     # Salvar dataset criado
     df0.to_pickle(INTERIM_DATA_DIR/pickle_fn)
-    print_with_time(f"Sucesso ao processar evoluções {'da enfermagem' if enfermagem else 'médicas'}")
+    unidade = 'da enfermagem' if enfermagem else 'médicas'
+    logger.debug("Sucesso ao processar evoluções %s" % unidade)
 
     
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ def gather_info_for_worksheets():
     logger = getLogger('standard')
 
     atends_coletados = set()
-    #Lendo os datsets
+    #Lendo os datasets
     base = read_pickle(INTERIM_DATA_DIR/'base.pickle')
     evol_med = read_pickle(INTERIM_DATA_DIR/'Evolução_Médica.pickle')
     evol_enf = read_pickle(INTERIM_DATA_DIR/'Evolução_Enfermagem.pickle')
@@ -44,7 +44,7 @@ def gather_info_for_worksheets():
         atends_coletados.update(n_atends_)
     prescricoes_counts.loc[prescricoes_counts['Noradrenalina'] == 0, 'DT_ITEM_PRESCRITO'] = to_datetime('NaT')
     
-    # Criando datset agrupado das evoluções médicas para adicioanr ao resultado final
+    # Criando dataset agrupado das evoluções médicas para adicioanr ao resultado final
     evol_med_counts = evol_med.groupby('NR_ATENDIMENTO').agg({
         'campo_sepse_evolucao_med':'sum',
         'CODIGO_AMARELO_EVOL':"sum",
@@ -249,7 +249,7 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
                                   'Prescrições Protocolo Sepse','Movimentações na UTI', 'Hemocultura', 'Antibiótico')
         )
         
-        for i, df_, sheet_name in enumerate(dfs_sheet_names):
+        for i, (df_, sheet_name) in enumerate(dfs_sheet_names):
             # Dropando pacientes que não são da unidade
             if i <= 1:
                 n_atend_col = 'Número de Atendimento'

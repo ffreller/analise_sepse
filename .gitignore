@@ -7,3 +7,4 @@ credentials.py
 instantclient_21_5/
 notebooks/*/
 references/
+*.log

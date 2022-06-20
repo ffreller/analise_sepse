@@ -8,7 +8,7 @@ Na 1a vez:
 5. Rodar <pip install -r requirements.txt>
 
 Quando for rodar:
-6. Rodar < python main.py >> log.txt >
+6. Rodar < python main.py --prod >
 
 git clone https://github.com/ffreller/analise_sepse
 cd analise_sepse

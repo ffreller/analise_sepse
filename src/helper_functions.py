@@ -77,12 +77,6 @@ def get_time_between_evolucao_med_com_sepse(df__):
 def my_rtf_to_text(rtf):
     from striprtf.striprtf import rtf_to_text
     return rtf_to_text(rtf, errors='ignore')
-
-
-def print_with_time(txt):
-    from datetime import datetime
-    agora = datetime.now()
-    print(f"{agora.strftime('%d/%m/%Y %H:%M:%S')} - {txt}")
     
     
 def apply_rtf_and_bold_expression(text, all_expressions):
@@ -130,7 +124,7 @@ def get_last_month_and_year():
 def get_selecionados_fn_for_month(unidade='ambas'):
     from src.definitions import PROCESSED_DATA_DIR
     from datetime import datetime
-    assert unidade.lower() in ['ambas', 'paulista', 'vergueiro'], print("Unidade precisa ser 'ambas', 'paulista' ou 'vergueiro'")
+    assert unidade.lower() in ['ambas', 'paulista', 'vergueiro'], "Unidade precisa ser 'ambas', 'paulista' ou 'vergueiro'"
     target_month, year_of_target_month, _, _ = get_last_month_and_year()
     target_date = datetime(year=year_of_target_month, month=target_month, day=1)
     if unidade.lower() == 'ambas' or unidade.lower() == 'paulista':

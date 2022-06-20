@@ -63,7 +63,7 @@ def send_standard_mail(prod=False):
               subject=email_subject, text=email_text,
               server=SMTP_SERVER, port=SMTP_PORT,
               files=[selecionados_fn_paulista, selecionados_fn_vergueiro])
-    logger.debug('Email enviado com sucesso! Destinatários: %s' % email_destinations.join(', '))
+    logger.debug('Email enviado com sucesso! Destinatários: %s' % ', '.join(email_destinations))
 
 
 

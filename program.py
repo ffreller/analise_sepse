@@ -1,3 +1,6 @@
+from preprocess import preprocess_base
+
+
 def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True, send_mail=True, delete_files=True):
     from create_excel import create_excel_files, gather_info_for_worksheets
     from preprocess import preprocess_base, preprocess_prescricoes, preprocess_evolucao
@@ -25,21 +28,21 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
             
             try:
                 preprocess_prescricoes()
-            except:
+            except Exception:
                 logger.error('Erro ao processar prescrições: %s' % format_exc())
                 error_logger.error('Erro ao processar prescrições: %s' % format_exc())
                 return
             
             try:
                 preprocess_evolucao(enfermagem=False)
-            except:
+            except Exception:
                 logger.error('Erro ao processar evoluções médicas: %s' % format_exc())
                 error_logger.error('Erro ao processar evoluções médicas: %s' % format_exc())
                 return
             
             try:
                 preprocess_evolucao(enfermagem=True)
-            except:
+            except Exception:
                 logger.error('Erro ao processar evoluções da enfermagem: %s' % format_exc())
                 error_logger.error('Erro ao processar evoluções da enfermagem: %s' % format_exc())
                 return
@@ -47,14 +50,14 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
         if create_files:
             try:
                 df_main_, evol_med_, evol_enf_, prescricoes_, movimentacoes_, hemocultura_, antibiotico_  = gather_info_for_worksheets()
-            except:
+            except Exception:
                 logger.error('Erro ao coletar informações para as planilhas: %s' % format_exc())
                 error_logger.error('Erro ao coletar informações para as planilhas: %s' % format_exc())
                 return
 
             try:
                 create_excel_files(df_main_, evol_med_, evol_enf_, prescricoes_, movimentacoes_,  hemocultura_, antibiotico_)
-            except:
+            except Exception:
                 logger.error('Erro ao criar arquivos de excel: %s' % format_exc())
                 error_logger.error('Erro ao criar arquivos de excel: %s' % format_exc())
                 return
@@ -65,7 +68,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
                     send_standard_mail(prod=True)
                 else:
                     send_standard_mail(prod=False)
-            except:
+            except Exception:
                 logger.error('Erro ao enviar emails: %s' % format_exc())
                 error_logger.error('Erro ao enviar emails: %s' % format_exc())
                 return
@@ -73,7 +76,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
         if delete_files:
             try:
                 delete_month_files()
-            except:
+            except Exception:
                 logger.error('Erro ao deletar arquivos do mês: %s' % format_exc())
                 error_logger.error('Erro ao deletar arquivos do mês: %s' % format_exc())
                 return
@@ -90,21 +93,21 @@ if __name__ == '__main__':
     parser.add_argument('--prod', dest='prod', action='store_true')
     parser.add_argument('--no-email', dest='no_email', action='store_true')
     parser.add_argument('--no-download', dest='no_download', action='store_true')
+    parser.add_argument('--no-preprocess', dest='no_preprocess', action='store_true')
     parser.set_defaults(test=False)
     parser.set_defaults(no_email=False)
     parser.set_defaults(no_download=False)
+    parser.set_defaults(no_preprocess=False)
     
     args = parser.parse_args()
     send_mail = not args.no_email
     download_data = not args.no_download
+    preprocess = not args.no_preprocess
     prod = args.prod
     
     if prod:
-        send_mail = True
         download_data = True
+        preprocess = True
+        send_mail = True        
     
-    
-    ExecuteProgram(prod=prod, send_mail=send_mail, download_data=download_data)
-    # ExecuteProgram(download_data=False, preprocess=False, create_files=True,
-    #                sendEmail=False, test=True, delete_files=False)
-    
+    ExecuteProgram(prod=prod, send_mail=send_mail, download_data=download_data, preprocess=preprocess)

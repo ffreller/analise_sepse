@@ -6,7 +6,7 @@
 6. Rodar <pip install -r requirements.txt>
 7. Abrir crontab
 8. Adicionar linha:<
-    0 7 5 * * bigdata /bigdata/anaconda3/envs/analise_sepse/bin/python /bigdata/analise_sepse/main.py >> /bigdata/analise_sepse/log_cron.txt
+    0 7 5 * * bigdata /bigdata/anaconda3/envs/analise_sepse/bin/python /bigdata/analise_sepse/main.py --prod
 >
 9. Salvar
 conda create -n analise_sepse python=3.7 -y
