@@ -6,3 +6,4 @@ credentials.py
 *.ipynb
 instantclient_21_5/
 notebooks/*/
+references/

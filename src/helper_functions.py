@@ -32,13 +32,13 @@ def remove_antecedentes_from_text(text):
 
 def text_contains_sepse_expression(text):
     import re
-    key_words_pattern_sepse = re.compile('choque *(s(e|é)ptico|refrat(a|á)rio|misto)|seps(e|is)|septicemia')
-    key_words_pattern_sepse_meio = re.compile('(choque *(s(e|é)ptico|refrat(a|á)rio|misto) *\?|seps(e|is) *\?|septicemia *\?)|(suspeita *de *choque *(s(e|é)ptico|refrat(a|á)rio|misto)|suspeita *de *seps(e|is)|suspeita *de *septicemia)')
+    key_words_pattern_sepse = re.compile('choque *(s(e|é)ptico|refrat(a|á)rio|misto)|seps(e|is)|septicemia', re.IGNORECASE)
+    key_words_pattern_sepse_meio = re.compile('(choque *(s(e|é)ptico|refrat(a|á)rio|misto) *\?|seps(e|is) *\?|septicemia *\?)|(suspeita *de *choque *(s(e|é)ptico|refrat(a|á)rio|misto)|suspeita *de *seps(e|is)|suspeita *de *septicemia)', re.IGNORECASE)
     if type(text) == str:
         if 'paciente comparece para biopsia de prostata' not in text.lower().replace('ó', 'o'):
-            match = key_words_pattern_sepse.search(text, re.IGNORECASE)
+            match = key_words_pattern_sepse.search(text)
             if match:
-                match_meio = key_words_pattern_sepse_meio.search(text, re.IGNORECASE)
+                match_meio = key_words_pattern_sepse_meio.search(text)
                 if match_meio:
                     return 0.5, match_meio.group(0)
                 return 1, match.group(0)         
@@ -47,12 +47,12 @@ def text_contains_sepse_expression(text):
 
 def text_contains_cuidados_paliativos(text):
     import re
-    key_words_pattern_paliativo = re.compile('cuidados? paliativos?')
-    key_words_patter_paliativo_ignorar = re.compile('cuidados paliativos *: * (sem limitação de suporte orgânico invasivo)|não')
+    key_words_pattern_paliativo = re.compile('cuidados? paliativos?', re.IGNORECASE)
+    key_words_patter_paliativo_ignorar = re.compile('cuidados paliativos *: * (sem limitação de suporte orgânico invasivo)|não', re.IGNORECASE)
     if type(text) == str:
-        match = key_words_pattern_paliativo.search(text.lower())
+        match = key_words_pattern_paliativo.search(text)
         if match:
-            match_ignorar = key_words_patter_paliativo_ignorar.search(text.lower())
+            match_ignorar = key_words_patter_paliativo_ignorar.search(text)
             if not match_ignorar:
                 return True       
     return False

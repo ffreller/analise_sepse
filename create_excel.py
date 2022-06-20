@@ -240,7 +240,7 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
         # Iterador para percorrer os dfs e os nomes das planilhas
         dfs_sheet_names =zip(
             dfs_generator(df_equipe_sepse, df_main_, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico),
-            sheet_names_generator('Controle equipe sepse', 'Pacientes coletados', 'Evoluções médicas', 'Evoluções enfermagem',
+            sheet_names_generator('Controle equipe sepse', 'Pacientes coletados', 'Evoluções médicas', 'Anotação padrão do Protocolo',
                                   'Prescrições Protocolo Sepse','Movimentações na UTI', 'Hemocultura', 'Antibiótico')
         )
         

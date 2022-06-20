@@ -7,7 +7,8 @@ from traceback import format_exc
 from argparse import ArgumentParser
 
 
-def ExecuteProgram(test, download_data=True, preprocess=True, create_files=True, sendEmail=True, delete_files=True):
+def ExecuteProgram(test, download_data=True, preprocess=True, create_files=True, send_mail=True, delete_files=True):
+    
     print()
     print('*'*80)
     if test:
@@ -61,7 +62,7 @@ def ExecuteProgram(test, download_data=True, preprocess=True, create_files=True,
                 print(format_exc())
                 return
         
-        if sendEmail:
+        if send_mail:
             try:
                 if test:
                     send_standard_mail_test()
@@ -83,11 +84,24 @@ def ExecuteProgram(test, download_data=True, preprocess=True, create_files=True,
     
 if __name__ == '__main__':
     parser = ArgumentParser(description="My parser")
-    parser.add_argument('--teste', dest='test', action='store_true')
+    parser.add_argument('--prod', dest='prod', action='store_true')
+    parser.add_argument('--no-email', dest='no_email', action='store_true')
+    parser.add_argument('--no-download', dest='no_download', action='store_true')
     parser.set_defaults(test=False)
+    parser.set_defaults(no_email=False)
+    parser.set_defaults(no_download=False)
+    
     args = parser.parse_args()
-    test = args.test
-    ExecuteProgram(test=test)
+    send_mail = not args.no_email
+    download_data = not args.no_download
+    prod = args.prod
+    
+    if prod:
+        send_mail = True
+        download_data = True
+    
+    
+    ExecuteProgram(prod=prod, send_mail=send_mail, download_data=download_data)
     # ExecuteProgram(download_data=False, preprocess=False, create_files=True,
     #                sendEmail=False, test=True, delete_files=False)
     
