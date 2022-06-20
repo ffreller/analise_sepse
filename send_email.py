@@ -1,14 +1,11 @@
-import smtplib
-from os.path import basename
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import COMMASPACE, formatdate
-from src.helper_functions import print_with_time, get_selecionados_fn_for_month
-from credentials import SMTP_SERVER, SMTP_PORT
-
-
 def send_mail(send_from, send_to, subject, text, server, port, files=None):
+    import smtplib
+    from os.path import basename
+    from email.mime.application import MIMEApplication
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.utils import COMMASPACE, formatdate
+    
     assert isinstance(send_to, list)
 
     msg = MIMEMultipart()
@@ -35,7 +32,17 @@ def send_mail(send_from, send_to, subject, text, server, port, files=None):
     smtp.close()
     
     
-def send_standard_mail(email_destinations):
+def send_standard_mail(prod=False):
+    from logging import getLogger
+    from src.helper_functions import get_selecionados_fn_for_month
+    from credentials import SMTP_SERVER, SMTP_PORT
+    
+    logger = getLogger('standard')
+    
+    email_destinations = ['ffreller', 'dagsilva', 'elisa.habiro', 'vsiqueira']
+    if not prod:
+        email_destinations = email_destinations[:1]
+    
     selecionados_fn_paulista, selecionados_fn_vergueiro = get_selecionados_fn_for_month()
     mes_ano = str(selecionados_fn_paulista)[-12:-5]
     email_subject =f"Planilhas Sepse {mes_ano.replace('-', '/')}"
@@ -56,24 +63,9 @@ def send_standard_mail(email_destinations):
               subject=email_subject, text=email_text,
               server=SMTP_SERVER, port=SMTP_PORT,
               files=[selecionados_fn_paulista, selecionados_fn_vergueiro])
-    print_with_time('Email enviado com sucesso!')
+    logger.debug('Email enviado com sucesso! Destinatários: %s' % email_destinations.join(', '))
 
-
-def send_standard_mail_test():
-    email_destinations = ['ffreller']
-    print_with_time(f"Enviando email (teste) para: {', '.join(email_destinations)}")
-    send_standard_mail(email_destinations) 
- 
-    
-def send_standard_mail_prod():
-    email_destinations = ['ffreller',
-                          'dagsilva',
-                          'elisa.habiro',
-                          'vsiqueira'
-                          ]
-    print_with_time(f"Enviando email (prod) para: {', '.join(email_destinations)}")
-    send_standard_mail(email_destinations)
 
 
 if __name__ == '__main__':
-    send_standard_mail_test()
+    send_standard_mail()
