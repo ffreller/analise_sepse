@@ -10,6 +10,12 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
     from traceback import format_exc
     from logging import getLogger
     
+    if prod:
+        download_data = True
+        preprocess = True
+        create_files=True
+        send_mail = True  
+    
     logger = getLogger('standard')
     error_logger = getLogger('error')
     
@@ -76,6 +82,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
                 logger.error('Erro ao deletar arquivos do mês: %s' % format_exc())
                 error_logger.error('Erro ao deletar arquivos do mês: %s' % format_exc())
                 return
+        logger.debug('FIM: Sucesso ao executar script\n')
 
     
 if __name__ == '__main__':
@@ -99,11 +106,6 @@ if __name__ == '__main__':
     send_mail = not args.no_email
     download_data = not args.no_download
     preprocess = not args.no_preprocess
-    prod = args.prod
-    
-    if prod:
-        download_data = True
-        preprocess = True
-        send_mail = True        
+    prod = args.prod      
     
     ExecuteProgram(prod=prod, send_mail=send_mail, download_data=download_data, preprocess=preprocess)

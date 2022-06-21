@@ -109,15 +109,15 @@ def my_rtf_to_text(rtf):
     
     
 def apply_rtf_and_bold_expression(text, all_expressions):
+    expression_found = False
     new_text = """{\\rtf1 {\\colortbl;\\red0\\green0\\blue0;\\red255\\green0\\blue0;}""" + text + "}"
     for expression in all_expressions:
-        if expression == 'NÃO' or '?' in expression or 'suspeita' in expression:
+        if (expression == 'NÃO') or ('?' in expression) or ('suspeita' in expression):
             continue
         if expression in new_text:
-            new_text = new_text.replace(expression, f"\\b {expression} \\b0")
-            new_text = new_text.replace('\\b ', '\\cf2\\b ')
-            new_text = new_text.replace(' \\b0', ' \\b0\\cf')
-    return new_text 
+            new_text = new_text.replace(expression, f"\\cf2\\b {expression} \\b0\\cf'")
+            expression_found = True
+    return new_text if expression_found else text
 
 
 def hemocultura_antibiotico_dentro_do_periodo(row, horarios_sepse_dict):
