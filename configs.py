@@ -37,7 +37,7 @@ LOGGING_CONFIG = {
             'mailhost': SMTP_SERVER,
             'fromaddr': "relatorios.tasy@haoc.com.br",
             'toaddrs': ["datalab@haoc.com.br"],
-            'subject': '[CALL CENTER] Erro na execução do script de coleta do Call Center'
+            'subject': '[SEPSE] Erro na execução do script de coleta de pacientes Sepse'
         }
 
     },

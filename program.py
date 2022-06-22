@@ -19,9 +19,15 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
     logger = getLogger('standard')
     error_logger = getLogger('error')
     
-    success = True
+    success = True        
     if download_data:
-        success = retrieve_last_month_data_from_dbtasy()     
+        try:
+            success = retrieve_last_month_data_from_dbtasy()
+            # success = retrieve_specific_dates_from_dbtasy('14/06/2021', '14/01/2022') 
+        except:
+            logger.error('Erro na comunicação com o DB: %s' % format_exc())
+            error_logger.error('Erro na comunicação com o DB: %s' % format_exc())
+            return       
     
     if success:
         if preprocess:
