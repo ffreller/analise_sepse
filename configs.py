@@ -1,5 +1,5 @@
+from src.definitions import MAIN_DIR
 from credentials import SMTP_SERVER
-
 
 LOGGING_CONFIG = { 
     'version': 1,
@@ -21,14 +21,14 @@ LOGGING_CONFIG = {
             'level': 'NOTSET',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
-            'filename': 'log.log',
+            'filename': MAIN_DIR/'log.log',
             'mode': 'a'
         },
         'file_error': { 
             'level': 'ERROR',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
-            'filename': 'errors.log',
+            'filename': MAIN_DIR/'errors.log',
             'mode': 'a'
         },
         'email':{
@@ -37,7 +37,7 @@ LOGGING_CONFIG = {
             'mailhost': SMTP_SERVER,
             'fromaddr': "relatorios.tasy@haoc.com.br",
             'toaddrs': ["datalab@haoc.com.br"],
-            'subject': '[SEPSE] Erro na execução do script de coleta de pacientes Sepse'
+            'subject': '[CALL CENTER] Erro na execução do script de coleta do Call Center'
         }
 
     },

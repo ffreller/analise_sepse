@@ -109,6 +109,8 @@ def my_rtf_to_text(rtf):
     
     
 def apply_rtf_and_bold_expression(text, all_expressions):
+    if not isinstance(text, str):
+        return text
     expression_found = False
     new_text = """{\\rtf1 {\\colortbl;\\red0\\green0\\blue0;\\red255\\green0\\blue0;}""" + text + "}"
     for expression in all_expressions:

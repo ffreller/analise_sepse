@@ -88,7 +88,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
 if __name__ == '__main__':
     from argparse import ArgumentParser
     import logging.config
-    from src.configs import LOGGING_CONFIG
+    from configs import LOGGING_CONFIG
     
     logging.config.dictConfig(LOGGING_CONFIG)
     
