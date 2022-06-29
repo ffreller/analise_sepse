@@ -1,9 +1,6 @@
-from os import dup
-
-
 def gather_info_for_worksheets():
     
-    from src.helper_functions import get_time_between_evolucao_med_com_sepse, hemocultura_antibiotico_dentro_do_periodo
+    from src.helper_functions import get_time_between_evolucao_med_com_sepse, hemocultura_antibiotico_dentro_do_periodo, format_hours_deltatime
     from src.definitions import INTERIM_DATA_DIR, RAW_DATA_DIR
     from pandas import read_pickle, to_datetime
     from logging import getLogger
@@ -55,7 +52,7 @@ def gather_info_for_worksheets():
     })
     
     # Selecionando apenas os atendimentos que têm evolução médica com expressão relacionada a sepse
-    evol_med_sepse = evol_med.loc[evol_med['sepse_expression_evolucao_med'] > 0].copy()
+    evol_med_sepse = evol_med.loc[evol_med['sepse_expression_evolucao_med'] > 0].sort_values(['NR_ATENDIMENTO', 'DT_EVOLUCAO_MED']).copy()
     #Coluna com tempo entre evoluções médicas com sepse
     time_between_evolucao_med_com_sepse = get_time_between_evolucao_med_com_sepse(evol_med_sepse)    
     # Criando coluna com menor data de evolução médica que contém expressão relacionada a sepse
@@ -92,24 +89,24 @@ def gather_info_for_worksheets():
     df_main['sepse_expression_evolucao_med_sum'] = df_main['sepse_expression_evolucao_med_sum'] + df_main['campo_sepse_evolucao_med_sum']
     
     cols_names = {
-    'NR_ATENDIMENTO':'Número de Atendimento',
-    'CD_ESTABELECIMENTO':'Unidade',
-    'NR_PRONTUARIO':'Prontuário',
-    'NM_PESSOA_FISICA':'Nome do paciente',
-    'DT_ENTRADA':'Data e hora da admissão no Hospital',
-    'DT_ALTA':'Data e hora da saída hospitalar',
-    'DT_ENTRADA_GRUPO':'Menor data de entrada no grupo sepse',
-    'sepse_expression_evolucao_med_sum':'Número de evoluções médicas que contêm palavra relacionada a sepse',
-    'sepse_expression_evolucao_med_mean':'Proporção de evoluções médicas que contêm palavra relacionada a sepse',
-    'primeira_data_com_sepse':'Menor data de evolução médica com palavra relacionada a sepse',
-    'primeira_data_com_paliativo':'Menor data de evolução médica com cuidados paliativos',	
-    'PROTOCOLO_SEPSE':'Número de prescrições com Procolo Sepse assinalado',
-    'Noradrenalina':'Número de prescrições de noradrenalina (código)',
-    'DT_ITEM_PRESCRITO':'Menor data de prescrição de noradrenalina/com protocolo sepse assinalado',
-    'TEMPLATE_ENF': 'Número de evoluções da enfermagem com texto padrão de protocolo sepse',
-    'DT_EVOLUCAO_ENF': 'Menor data de evolução da enfermagem com texto padrão de protocolo sepse',
-    'DS_MOTIVO_ALTA':'Condição de saída',
-}
+        'NR_ATENDIMENTO':'Número de Atendimento',
+        'CD_ESTABELECIMENTO':'Unidade',
+        'NR_PRONTUARIO':'Prontuário',
+        'NM_PESSOA_FISICA':'Nome do paciente',
+        'DT_ENTRADA':'Data e hora da admissão no Hospital',
+        'DT_ALTA':'Data e hora da saída hospitalar',
+        'DT_ENTRADA_GRUPO':'Menor data de entrada no grupo sepse',
+        'sepse_expression_evolucao_med_sum':'Número de evoluções médicas que contêm palavra relacionada a sepse',
+        'sepse_expression_evolucao_med_mean':'Proporção de evoluções médicas que contêm palavra relacionada a sepse',
+        'primeira_data_com_sepse':'Menor data de evolução médica com palavra relacionada a sepse',
+        'primeira_data_com_paliativo':'Menor data de evolução médica com cuidados paliativos',	
+        'PROTOCOLO_SEPSE':'Número de prescrições com Procolo Sepse assinalado',
+        'Noradrenalina':'Número de prescrições de noradrenalina (código)',
+        'DT_ITEM_PRESCRITO':'Menor data de prescrição de noradrenalina/com protocolo sepse assinalado',
+        'TEMPLATE_ENF': 'Número de evoluções da enfermagem com texto padrão de protocolo sepse',
+        'DT_EVOLUCAO_ENF': 'Menor data de evolução da enfermagem com texto padrão de protocolo sepse',
+        'DS_MOTIVO_ALTA':'Condição de saída',
+    }
     cols = list(cols_names.keys())
     df_main = df_main[cols].copy()
     df_main = df_main.rename(columns=cols_names)
@@ -119,7 +116,7 @@ def gather_info_for_worksheets():
                               (evol_med['CODIGO_AMARELO_EVOL'] == 1) |
                               (evol_med['sepse_expression_evolucao_med'] > 0)].copy()
     evol_med_coletados = evol_med_coletados.merge(time_between_evolucao_med_com_sepse, how='left', left_index=True, right_index=True)
-    evol_med_coletados['tempo_entre_evolucao_med_com_sepse'] = evol_med_coletados['tempo_entre_evolucao_med_com_sepse'].astype(str).str.replace('day', 'dia')
+    evol_med_coletados['tempo_entre_evolucao_med_com_sepse'] = evol_med_coletados['tempo_entre_evolucao_med_com_sepse'].apply(format_hours_deltatime)
     evol_med_coletados.drop('campo_sepse_evolucao_med', axis=1, inplace=True)
 
     evol_enf_coletados = evol_enf.drop(['DS_EVOLUCAO_ENF', 'TEMPLATE_ENF'], axis=1).copy()
@@ -127,11 +124,11 @@ def gather_info_for_worksheets():
     hemocultura_coletados = hemocultura[hemocultura['NR_ATENDIMENTO'].isin(atends_coletados)].copy()
     antibiotico_coletados = antibiotico[antibiotico['NR_ATENDIMENTO'].isin(atends_coletados)].copy()
     antibiotico_hemocultura_columns = {
-    'diff_hours':'Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse',
-    '-48h':'DT_PRESCRICAO Até 48h antes',
-    '+48h':'DT_PRESCRICAO Até 48h depois',
-    '48AntesOuDepois': 'DT_PRESCRICAO até 48h antes ou depois',
-}
+        'diff_hours':'Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse',
+        '-48h':'DT_PRESCRICAO Até 48h antes',
+        '+48h':'DT_PRESCRICAO Até 48h depois',
+        '48AntesOuDepois': 'DT_PRESCRICAO até 48h antes ou depois',
+    }
 
     for df_ in [hemocultura_coletados, antibiotico_coletados]:
         df_['diff_hours'] = df_.apply(lambda x: hemocultura_antibiotico_dentro_do_periodo(x, horarios_sepse_dict), axis=1)
@@ -151,6 +148,7 @@ def gather_info_for_worksheets():
 
 
 def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
+    from src.helper_functions import format_hours_deltatime
     df0 = df_main[['Número de Atendimento', 'Nome do paciente', 'Prontuário', 'Condição de saída',
                    'Data e hora da admissão no Hospital', 'Data e hora da saída hospitalar', 'Menor data de evolução médica com palavra relacionada a sepse']].copy()
     df0['Tempo de permanência hospitalar'] = df0['Data e hora da saída hospitalar'] - df0['Data e hora da admissão no Hospital']
@@ -167,8 +165,8 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
     df1 = df0.merge(df_antib[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_ADMINISTRACAO']],
                     left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
     df1.drop(columns=['NR_ATENDIMENTO'], inplace=True)
-    df1.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição do antibiótico',
-                        'DT_ADMINISTRACAO':'Data e hora da administração do antibiótico'}, inplace=True)
+    df1.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição do antibiótico (preenchimento automático)',
+                        'DT_ADMINISTRACAO':'Data e hora da administração do antibiótico (preenchimento automático)'}, inplace=True)
     
     df_hemo = df_hemo[df_hemo['DT_PRESCRICAO até 48h antes ou depois'] == True].copy()
     df_hemo['abs_diff'] = df_hemo['Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse'].abs()
@@ -177,28 +175,19 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
     df2 = df1.merge(df_hemo[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_LIBERACAO']],
                     left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
     df2.drop(columns=['NR_ATENDIMENTO'], inplace=True)
-    df2['Tempo (em horas) entre prescrição e liberação da HMC'] = (df2['DT_PRESCRICAO'] - df2['DT_LIBERACAO']).dt.total_seconds()/3600
-    df2.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição da hemocultura',
-                        'DT_LIBERACAO':'Data e hora da liberação da hemocultura'}, inplace=True)
-    
-    # df2.loc[~df2['Data e hora da prescrição da hemocultura'].isna() & ~df2['Data e hora da prescrição da hemocultura'].isna(),
-    #         'Prescicao Hemocultura antes da prescrição do Antibiótico'] = \
-    #     df2['Data e hora da prescrição da hemocultura'] < df2['Data e hora da prescrição do antibiótico']
+    df2['Tempo (em horas) entre prescrição e liberação da HMC (preenchimento automático)'] =\
+        ((df2['DT_LIBERACAO']-df2['DT_PRESCRICAO']).dt.total_seconds()/3600).apply(format_hours_deltatime)
+    df2.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição da hemocultura (preenchimento automático)',
+                        'DT_LIBERACAO':'Data e hora da liberação da hemocultura (preenchimento automático)'}, inplace=True)
     
     df3 = df2.merge(df_mov[['NR_ATENDIMENTO', 'DT_ENTRADA_UNIDADE','DT_SAIDA_UNIDADE']],
-                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
-    duplicados = df3.sort_values('DT_ENTRADA_UNIDADE').duplicated(subset='Número de Atendimento', keep='first')
-    # print(duplicados)
-    df4 = df3.loc[~duplicados, :].drop('NR_ATENDIMENTO', axis=1).copy()
-    # print(df4)
-    
+                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left') 
     df3 = df3.sort_values('DT_ENTRADA_UNIDADE').drop_duplicates(subset=['Número de Atendimento'], keep='first')\
         .drop('NR_ATENDIMENTO', axis=1).sort_index().copy()
-    print(df3.equals(df4))
-    
+
     df3.rename(columns={'DT_ENTRADA_UNIDADE': 'Data e hora da primeira admissão à UTI',
                         'DT_SAIDA_UNIDADE': 'Data e hora da primeira saída da UTI',
-                        'Menor data de evolução médica com palavra relacionada a sepse':"Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático, favor revisar)"}, inplace=True) 
+                        'Menor data de evolução médica com palavra relacionada a sepse':"Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático)"}, inplace=True) 
     
     qualidade_final_columns = ['Número de Atendimento',
                             'Nome do paciente',
@@ -211,12 +200,12 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
                             'Óbito >30 dias do diagnóstico de Sepse',
                             'Paciente eletivo para Indicador de Letalidade? (sim/não)',
                             'Local do diagnóstico',
-                            'Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático, favor revisar)',
-                            'Data e hora da prescrição da hemocultura', 'Data e hora da liberação da hemocultura',
-                            'Hemocultura antes do ATB', 'Tempo (em horas) entre prescrição e liberação da HMC',
-                            'Data e hora da prescrição do antibiótico',
+                            'Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático)',
+                            'Data e hora da prescrição da hemocultura (preenchimento automático)', 'Data e hora da liberação da hemocultura (preenchimento automático)',
+                            'Hemocultura antes do ATB', 'Tempo (em horas) entre prescrição e liberação da HMC (preenchimento automático)',
+                            'Data e hora da prescrição do antibiótico (preenchimento automático)',
                             'Tempo entre diagnóstico e prescrição médica',
-                            'Data e hora da administração do antibiótico',
+                            'Data e hora da administração do antibiótico (preenchimento automático)',
                             'Tempo em minutos - Diagnóstico e administração',
                             'Administração ATB em até 1 hora', 'Nome do antibiótico utilizado',
                             'Paciente oncológico? (sim/não)',
@@ -225,13 +214,15 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
                             'Resultado de SAPS III da admissão da UTI',
                             'Paciente teve diagnóstico de COVID nessa internação? (sim/não)']
     df3 = df3.reindex(columns=qualidade_final_columns)
-    qualidade_cols_to_leave_blank = ['Paciente com descrição de Cuidados Paliativos', 'Óbito >30 dias do diagnóstico de Sepse',
-                                 'Paciente eletivo para Indicador de Letalidade? (sim/não)', 'Local do diagnóstico',
-                                 'Tempo em minutos - Diagnóstico e administração', 'Hemocultura antes do ATB',
-                                 'Administração ATB em até 1 hora', 'Nome do antibiótico utilizado', 'Paciente oncológico? (sim/não)',
-                                 'Classificação da sepse (sepse/Choque Séptico)', 'Foco da Infecção', 'Comunitária/ Nosocomial', 'Teve uso de droga Vasoativa? (sim/não)',
-                                 'Resultado de SAPS III da admissão da UTI', 'Paciente teve diagnóstico de COVID nessa internação? (sim/não)']
-    df3[qualidade_cols_to_leave_blank] = df3[qualidade_cols_to_leave_blank].fillna('')
+    # cols_fill_na = ['Paciente com descrição de Cuidados Paliativos', 'Óbito >30 dias do diagnóstico de Sepse',
+    #                 'Paciente eletivo para Indicador de Letalidade? (sim/não)', 'Local do diagnóstico',
+    #                 'Tempo em minutos - Diagnóstico e administração', 'Hemocultura antes do ATB',
+    #                 'Administração ATB em até 1 hora', 'Nome do antibiótico utilizado', 'Paciente oncológico? (sim/não)',
+    #                 'Classificação da sepse (sepse/Choque Séptico)', 'Foco da Infecção', 'Comunitária/ Nosocomial', 'Teve uso de droga Vasoativa? (sim/não)',
+    #                 'Resultado de SAPS III da admissão da UTI', 'Paciente teve diagnóstico de COVID nessa internação? (sim/não)',
+    #                 ]
+    # df3[cols_fill_na] = df3[cols_fill_na].fillna('')
+
     
     return df3
 

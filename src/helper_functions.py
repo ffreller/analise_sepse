@@ -1,9 +1,3 @@
-import posixpath
-from xml.etree.ElementTree import SubElement
-
-from numpy import half
-
-
 def campo_sepse_med(text):
     if type(text) == str:
         if "Sepse :" in text:
@@ -97,9 +91,9 @@ def text_contains_codigo_amarelo(text):
 def get_time_between_evolucao_med_com_sepse(df__):
     from datetime import timedelta
     df_ = df__.copy()
-    df_['tempo_entre_evolucao_med_com_sepse'] = df_['DT_EVOLUCAO_MED'].diff()
+    df_['tempo_entre_evolucao_med_com_sepse'] = df_['DT_EVOLUCAO_MED'].diff().dt.total_seconds()/3600
     df_.loc[df_['NR_ATENDIMENTO'].diff() != 0, 'tempo_entre_evolucao_med_com_sepse'] = float('nan')
-    df_['tempo_entre_evolucao_med_com_sepse>72'] = df_['tempo_entre_evolucao_med_com_sepse'] > timedelta(days=3)
+    df_['tempo_entre_evolucao_med_com_sepse>72'] = df_['tempo_entre_evolucao_med_com_sepse'] > 72
     return df_[['tempo_entre_evolucao_med_com_sepse', 'tempo_entre_evolucao_med_com_sepse>72']].copy()
 
 
@@ -167,9 +161,22 @@ def get_selecionados_fn_for_month(unidade='ambas'):
 def dfs_generator(*args):
     for arg in args:
         yield arg.copy()
-
+        
   
 def sheet_names_generator(*args):
     for arg in args:
         yield arg
     
+
+def format_hours_deltatime(number):
+    from math import isnan
+    if isnan(number):
+        return ''
+    final_str = '-' if number < 0 else ''
+    number = abs(number)
+    decimal_hours = number - int(number)
+    minutes = decimal_hours * 60
+    decimal_minutes = minutes - int(minutes)
+    seconds = decimal_minutes * 60
+    
+    return final_str+'{:02}:{:02}:{:02}'.format(int(number), int(minutes), int(seconds))
