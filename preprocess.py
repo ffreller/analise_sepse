@@ -68,7 +68,7 @@ def preprocess_evolucao(enfermagem):
     df0 = read_pickle(RAW_DATA_DIR/pickle_fn)
     df0['EVOLUCAO'] = df0['DS_EVOLUCAO'].apply(my_rtf_to_text)
     assert df0['EVOLUCAO'].isna().sum() == 0,\
-        "Valores nan na coluna da evolucao {'enfermagem' if enfermagem else 'médica'}"
+        f"Valores nan na coluna da evolucao {'enfermagem' if enfermagem else 'médica'}"
     df0['EVOLUCAO'] = df0['EVOLUCAO'].apply(strip_html_tags)
     df0['EVOLUCAO'] = df0['EVOLUCAO'].str.replace(u'\xa0', u' ')
     

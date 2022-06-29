@@ -124,7 +124,7 @@ def apply_rtf_and_bold_expression(text, all_expressions):
 
 def hemocultura_antibiotico_dentro_do_periodo(row, horarios_sepse_dict):
     n_atend = row['NR_ATENDIMENTO']
-    data = row['DT_LIBERACAO']
+    data = row['DT_PRESCRICAO']
     data_sepse = horarios_sepse_dict[n_atend]
     diff_horas = (data - data_sepse).total_seconds()/3600
     return round(diff_horas, 2)

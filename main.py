@@ -8,7 +8,6 @@ if __name__ == '__main__':
     parser.add_argument('--prod', dest='prod', action='store_true')
     parser.add_argument('--no-email', dest='no_email', action='store_true')
     parser.add_argument('--no-download', dest='no_download', action='store_true')
-    parser.add_argument('--only-base', dest='only_base', action='store_true')
     parser.add_argument('--no-preprocess', dest='no_preprocess', action='store_true')
     parser.set_defaults(prod=False)
     parser.set_defaults(no_email=False)

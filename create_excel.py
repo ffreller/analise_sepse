@@ -1,3 +1,6 @@
+from os import dup
+
+
 def gather_info_for_worksheets():
     
     from src.helper_functions import get_time_between_evolucao_med_com_sepse, hemocultura_antibiotico_dentro_do_periodo
@@ -124,17 +127,17 @@ def gather_info_for_worksheets():
     hemocultura_coletados = hemocultura[hemocultura['NR_ATENDIMENTO'].isin(atends_coletados)].copy()
     antibiotico_coletados = antibiotico[antibiotico['NR_ATENDIMENTO'].isin(atends_coletados)].copy()
     antibiotico_hemocultura_columns = {
-    'diff_hours':'Diferença em horas entre DT_LIBERACAO e menor data de evolução médica com palavra relacionada a sepse',
-    '-48h':'DT_LIBERACAO Até 48h antes',
-    '24h':'DT_LIBERACAO Até 24h depois',
-    '48ou24': 'DT_LIBERACAO até 48h antes ou 24h depois',
+    'diff_hours':'Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse',
+    '-48h':'DT_PRESCRICAO Até 48h antes',
+    '+48h':'DT_PRESCRICAO Até 48h depois',
+    '48AntesOuDepois': 'DT_PRESCRICAO até 48h antes ou depois',
 }
 
     for df_ in [hemocultura_coletados, antibiotico_coletados]:
         df_['diff_hours'] = df_.apply(lambda x: hemocultura_antibiotico_dentro_do_periodo(x, horarios_sepse_dict), axis=1)
         df_['-48h'] = (df_['diff_hours'] >= -48) & (df_['diff_hours'] <= 0)
-        df_['24h'] = (df_['diff_hours'] >= 0) & (df_['diff_hours'] <= 24)
-        df_['48ou24'] = df_['24h'] | df_['-48h']
+        df_['+48h'] = (df_['diff_hours'] >= 0) & (df_['diff_hours'] <= 48)
+        df_['48AntesOuDepois'] = df_['+48h'] | df_['-48h']
         df_.rename(columns=antibiotico_hemocultura_columns, inplace=True)
     
     prescricoes_coletados = prescricoes[prescricoes['NR_ATENDIMENTO'].isin(atends_coletados)].copy()
@@ -147,17 +150,53 @@ def gather_info_for_worksheets():
     return df_main, evol_med_coletados, evol_enf_coletados, prescricoes_coletados, movimentacoes_coletados, hemocultura_coletados, antibiotico_coletados
 
 
-def create_df_equipe_sepse(df_main, df_mov):
+def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
     df0 = df_main[['Número de Atendimento', 'Nome do paciente', 'Prontuário', 'Condição de saída',
                    'Data e hora da admissão no Hospital', 'Data e hora da saída hospitalar', 'Menor data de evolução médica com palavra relacionada a sepse']].copy()
     df0['Tempo de permanência hospitalar'] = df0['Data e hora da saída hospitalar'] - df0['Data e hora da admissão no Hospital']
     df0['Tempo de permanência hospitalar'] = df0['Tempo de permanência hospitalar'].astype(str).str.replace('day', 'dia')
     
-    df1 = df0.merge(df_mov[['NR_ATENDIMENTO', 'DT_ENTRADA_UNIDADE','DT_SAIDA_UNIDADE']],
+    pacientes_antib = df_antib[['NR_ATENDIMENTO', 'DT_PRESCRICAO até 48h antes ou depois']].groupby('NR_ATENDIMENTO').sum()
+    pacientes_antib_48 = pacientes_antib[pacientes_antib['DT_PRESCRICAO até 48h antes ou depois'] != 0].index
+    df0.loc[~df0['Número de Atendimento'].isin(pacientes_antib_48), 'Menor data de evolução médica com palavra relacionada a sepse'] = float('NaN')
+    
+    df_antib = df_antib[df_antib['DT_PRESCRICAO até 48h antes ou depois'] == True].copy()
+    df_antib['abs_diff'] = df_antib['Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse'].abs()
+    df_antib.sort_values('abs_diff', inplace=True)
+    df_antib.drop_duplicates(subset=['NR_ATENDIMENTO'], inplace=True, keep='first')
+    df1 = df0.merge(df_antib[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_ADMINISTRACAO']],
                     left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
-    duplicados = df1.sort_values('DT_ENTRADA_UNIDADE').duplicated(subset='Número de Atendimento', keep='first')
-    df1 = df1.loc[~duplicados, :].drop('NR_ATENDIMENTO', axis=1).copy()
-    df1.rename(columns={'DT_ENTRADA_UNIDADE': 'Data e hora da primeira admissão à UTI',
+    df1.drop(columns=['NR_ATENDIMENTO'], inplace=True)
+    df1.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição do antibiótico',
+                        'DT_ADMINISTRACAO':'Data e hora da administração do antibiótico'}, inplace=True)
+    
+    df_hemo = df_hemo[df_hemo['DT_PRESCRICAO até 48h antes ou depois'] == True].copy()
+    df_hemo['abs_diff'] = df_hemo['Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse'].abs()
+    df_hemo.sort_values('abs_diff', inplace=True)
+    df_hemo.drop_duplicates(subset=['NR_ATENDIMENTO'], inplace=True, keep='first')
+    df2 = df1.merge(df_hemo[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_LIBERACAO']],
+                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
+    df2.drop(columns=['NR_ATENDIMENTO'], inplace=True)
+    df2['Tempo (em horas) entre prescrição e liberação da HMC'] = (df2['DT_PRESCRICAO'] - df2['DT_LIBERACAO']).dt.total_seconds()/3600
+    df2.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição da hemocultura',
+                        'DT_LIBERACAO':'Data e hora da liberação da hemocultura'}, inplace=True)
+    
+    # df2.loc[~df2['Data e hora da prescrição da hemocultura'].isna() & ~df2['Data e hora da prescrição da hemocultura'].isna(),
+    #         'Prescicao Hemocultura antes da prescrição do Antibiótico'] = \
+    #     df2['Data e hora da prescrição da hemocultura'] < df2['Data e hora da prescrição do antibiótico']
+    
+    df3 = df2.merge(df_mov[['NR_ATENDIMENTO', 'DT_ENTRADA_UNIDADE','DT_SAIDA_UNIDADE']],
+                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
+    duplicados = df3.sort_values('DT_ENTRADA_UNIDADE').duplicated(subset='Número de Atendimento', keep='first')
+    # print(duplicados)
+    df4 = df3.loc[~duplicados, :].drop('NR_ATENDIMENTO', axis=1).copy()
+    # print(df4)
+    
+    df3 = df3.sort_values('DT_ENTRADA_UNIDADE').drop_duplicates(subset=['Número de Atendimento'], keep='first')\
+        .drop('NR_ATENDIMENTO', axis=1).sort_index().copy()
+    print(df3.equals(df4))
+    
+    df3.rename(columns={'DT_ENTRADA_UNIDADE': 'Data e hora da primeira admissão à UTI',
                         'DT_SAIDA_UNIDADE': 'Data e hora da primeira saída da UTI',
                         'Menor data de evolução médica com palavra relacionada a sepse':"Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático, favor revisar)"}, inplace=True) 
     
@@ -173,9 +212,9 @@ def create_df_equipe_sepse(df_main, df_mov):
                             'Paciente eletivo para Indicador de Letalidade? (sim/não)',
                             'Local do diagnóstico',
                             'Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático, favor revisar)',
-                            'Horário da prescrição da HMC', 'Data da coleta da hemocultura',
-                            'Hemocultura antes do ATB', 'Tempo entre prescrição e coleta  de HMC',
-                            'Data e hora da prescrição de antibiótico',
+                            'Data e hora da prescrição da hemocultura', 'Data e hora da liberação da hemocultura',
+                            'Hemocultura antes do ATB', 'Tempo (em horas) entre prescrição e liberação da HMC',
+                            'Data e hora da prescrição do antibiótico',
                             'Tempo entre diagnóstico e prescrição médica',
                             'Data e hora da administração do antibiótico',
                             'Tempo em minutos - Diagnóstico e administração',
@@ -185,15 +224,16 @@ def create_df_equipe_sepse(df_main, df_mov):
                             'Comunitária/ Nosocomial', 'Teve uso de droga Vasoativa? (sim/não)',
                             'Resultado de SAPS III da admissão da UTI',
                             'Paciente teve diagnóstico de COVID nessa internação? (sim/não)']
-    df1 = df1.reindex(columns=qualidade_final_columns)
+    df3 = df3.reindex(columns=qualidade_final_columns)
     qualidade_cols_to_leave_blank = ['Paciente com descrição de Cuidados Paliativos', 'Óbito >30 dias do diagnóstico de Sepse',
-                                 'Paciente eletivo para Indicador de Letalidade? (sim/não)', 'Local do diagnóstico',  'Data da coleta da hemocultura',
-                                 'Hemocultura antes do ATB', 'Tempo entre prescrição e coleta  de HMC', 'Tempo em minutos - Diagnóstico e administração',
+                                 'Paciente eletivo para Indicador de Letalidade? (sim/não)', 'Local do diagnóstico',
+                                 'Tempo em minutos - Diagnóstico e administração', 'Hemocultura antes do ATB',
                                  'Administração ATB em até 1 hora', 'Nome do antibiótico utilizado', 'Paciente oncológico? (sim/não)',
                                  'Classificação da sepse (sepse/Choque Séptico)', 'Foco da Infecção', 'Comunitária/ Nosocomial', 'Teve uso de droga Vasoativa? (sim/não)',
                                  'Resultado de SAPS III da admissão da UTI', 'Paciente teve diagnóstico de COVID nessa internação? (sim/não)']
-    df1[qualidade_cols_to_leave_blank] = df1[qualidade_cols_to_leave_blank].fillna('')
-    return df1
+    df3[qualidade_cols_to_leave_blank] = df3[qualidade_cols_to_leave_blank].fillna('')
+    
+    return df3
 
 
 def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico):
@@ -203,7 +243,7 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
     
     logger = getLogger('standard')
 
-    df_equipe_sepse = create_df_equipe_sepse(df_main, df_movimentacoes)
+    df_equipe_sepse = create_df_equipe_sepse(df_main, df_movimentacoes, df_antibiotico, df_hemocultura)
     
     n_atends_paulista = df_main[df_main['Unidade'] == 'Paulista']['Número de Atendimento'].unique().tolist()
     n_atends_vergueiro = df_main[df_main['Unidade'] == 'Vergueiro']['Número de Atendimento'].unique().tolist()
