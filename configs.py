@@ -53,7 +53,7 @@ LOGGING_CONFIG = {
             'propagate': False
         },
         'error': { 
-            'handlers': ['file_error', 'email'],
+            'handlers': ['file_error'],
             'level': 'ERROR',
             'propagate': False
         }

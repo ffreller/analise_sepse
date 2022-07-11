@@ -148,6 +148,7 @@ def gather_info_for_worksheets():
 
 
 def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
+    df_main, df_mov, df_antib, df_hemo = df_main.copy(), df_mov.copy(), df_antib.copy(), df_hemo.copy()
     from src.helper_functions import format_hours_deltatime
     df0 = df_main[['Número de Atendimento', 'Nome do paciente', 'Prontuário', 'Condição de saída',
                    'Data e hora da admissão no Hospital', 'Data e hora da saída hospitalar', 'Menor data de evolução médica com palavra relacionada a sepse']].copy()

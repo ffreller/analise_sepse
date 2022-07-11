@@ -114,11 +114,15 @@ select ap.cd_estabelecimento,
        evp.nr_atendimento,
        evp.dt_evolucao,
        evp.dt_liberacao,
-       evp.ds_evolucao
+       evp.ds_evolucao,
+       sa.ds_setor_atendimento,
+       sa.nm_curto
   from tasy.evolucao_paciente evp,
-       tasy.atendimento_paciente ap
+       tasy.atendimento_paciente ap,
+       tasy.setor_atendimento    sa
  where 1=1 
    and evp.nr_atendimento = ap.nr_atendimento
+   and evp.cd_setor_atendimento = sa.cd_setor_atendimento
    and ap.cd_estabelecimento  in (1,17)
    and ap.ie_tipo_atendimento = 1
    and ap.dt_cancelamento is null
