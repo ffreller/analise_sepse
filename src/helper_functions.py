@@ -1,5 +1,5 @@
 def campo_sepse_med(text):
-    if type(text) == str:
+    if isinstance(text, str):
         if "Sepse :" in text:
             trecho = text[text.find("Sepse :")+len("Sepse :")+2: text.find("Sepse :")+12]
             if trecho.lower() == 'sim':
@@ -8,7 +8,7 @@ def campo_sepse_med(text):
 
 
 def remove_campo_sepse_from_text_med(text):
-    if type(text) == str:
+    if isinstance(text, str):
         if "Sepse :" in text:
             new = text.replace('Sepse :', '')
             return new
@@ -18,7 +18,7 @@ def remove_campo_sepse_from_text_med(text):
 def remove_antecedentes_from_text(text):
     import re
     pattern_antecedentes = re.compile('Antecedentes ?:')
-    if type(text) == str:
+    if isinstance(text, str):
         match = pattern_antecedentes.search(text)
         if match:
             before_antecedentes = text[:match.start()]
@@ -31,7 +31,7 @@ def remove_antecedentes_from_text(text):
 
 
 def text_contains_expression(text, regex_string, regex_half_string):
-    if type(text) == str:
+    if isinstance(text, str):
         from re import compile, findall, IGNORECASE
         key_words_pattern_sepse = compile(regex_string, IGNORECASE)
         key_words_pattern_sepse_half = compile(regex_half_string, IGNORECASE)
@@ -69,7 +69,7 @@ def get_regex_suspeita_interrogacao(text):
 
 
 def text_contains_cuidados_paliativos(text):
-    if type(text) == str:
+    if isinstance(text, str):
         import re
         key_words_pattern_paliativo = re.compile('cuidados? paliativos?', re.IGNORECASE)
         key_words_patter_paliativo_ignorar = re.compile('cuidados paliativos *: * (sem limitação de suporte orgânico invasivo)|não', re.IGNORECASE)
@@ -82,7 +82,7 @@ def text_contains_cuidados_paliativos(text):
 
 
 def text_contains_codigo_amarelo(text):
-    if type(text) == str:
+    if isinstance(text, str):
         if 'código amarelo/avaliação clínica' in text[:50].lower():
             return True       
     return False
@@ -180,3 +180,14 @@ def format_hours_deltatime(number):
     seconds = decimal_minutes * 60
     
     return final_str+'{:02}:{:02}:{:02}'.format(int(number), int(minutes), int(seconds))
+
+def extract_horario_from_text(regex_string, text):
+    if not isinstance(text, str):
+        return ""
+    from re import compile, findall
+    pattern = compile(regex_string)
+    matches  = findall(pattern, text)
+    if not matches:
+        return "NO MATCH"
+    match = matches[0].replace("_", "")
+    return match

@@ -1,6 +1,3 @@
-from preprocess import preprocess_base
-
-
 def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True, send_mail=True):
     from create_excel import create_excel_files, gather_info_for_worksheets
     from preprocess import preprocess_base, preprocess_prescricoes, preprocess_evolucao
@@ -17,7 +14,8 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
         send_mail = True  
     
     logger = getLogger('standard')
-    error_logger = getLogger('error')
+    error_logger_name = 'error_prod' if prod else 'error_test'
+    error_logger = getLogger(error_logger_name)
     
     success = True        
     if download_data:

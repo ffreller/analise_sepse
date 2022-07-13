@@ -52,7 +52,12 @@ LOGGING_CONFIG = {
             'level': 'NOTSET',
             'propagate': False
         },
-        'error': { 
+        'error_prod': { 
+            'handlers': ['file_error', 'email'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+        'error_test': { 
             'handlers': ['file_error'],
             'level': 'ERROR',
             'propagate': False

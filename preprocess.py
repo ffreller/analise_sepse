@@ -57,8 +57,7 @@ def preprocess_evolucao(enfermagem):
     from src.definitions import RAW_DATA_DIR, INTERIM_DATA_DIR
     from pandas import read_pickle
     from logging import getLogger
-    from src.helper_functions import text_contains_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
-    remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, my_rtf_to_text, get_regex_suspeita_interrogacao
+    from src.helper_functions import my_rtf_to_text
     from src.HTMLStripper import strip_html_tags
 
     logger = getLogger('standard')
@@ -78,9 +77,18 @@ def preprocess_evolucao(enfermagem):
     
     # Filtrando dados de evolução da enfermagem e deixando apenas os que têm template sepse indicado
     if enfermagem:
+        from src.helper_functions import extract_horario_from_text
         df0 = df0[df0['EVOLUCAO_ENF'].str.lower().str.contains('confirmação de protocolo sepse')].copy()
+        regex_horario_hmc = "Horário da Coleta da Hemocultura: *([^A-Z]+)"
+        regex_horario_adm_atb = "Horário da administração do antibiótico: *([^A-Z]+)(?=antibiótico)"
+        df0['Horário da Coleta da Hemocultura (extração automática de texto)'] = \
+            df0['EVOLUCAO_ENF'].apply(lambda txt: extract_horario_from_text(regex_horario_hmc, txt))
+        df0['Horário da administração do antibiótico (extração automática de texto)'] =\
+            df0['EVOLUCAO_ENF'].apply(lambda txt: extract_horario_from_text(regex_horario_adm_atb, txt))
         df0['TEMPLATE_ENF'] = 1
     else:
+        from src.helper_functions import text_contains_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
+            remove_antecedentes_from_text, text_contains_codigo_amarelo, text_contains_cuidados_paliativos, get_regex_suspeita_interrogacao
         # Criando coluna que indica se atendimento tinha 'Sim' assinalado no campo sepse da evolução médica
         df0['campo_sepse_evolucao_med'] = df0['EVOLUCAO_MED'].apply(campo_sepse_med)
         # Criando coluna que indica se evolução médica do paciente faz referência a cuidados paliativos

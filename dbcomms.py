@@ -90,8 +90,7 @@ def retrieve_data_from_dbtasy_using_dates(start_date, end_date):
                 cols = ["CD_ESTABELECIMENTO","NR_ATENDIMENTO","DT_EVOLUCAO","DT_LIBERACAO","DS_EVOLUCAO"]
                 if 'enfermagem' in query_name.lower():
                     cols += ['DS_SETOR_ATENDIMENTO', 'NM_CURTO']
-                df = execute_query_cxOracle_and_load_to_df(query, conn_cxOracle, 
-                                                           columns=cols)
+                df = execute_query_cxOracle_and_load_to_df(query, conn_cxOracle, columns=cols)
         except Exception as e:
             logger.error('Erro ao excecutar query %s: %s' % (query_name.title(), str(e)))
             error_logger.error('Erro ao excecutar query %s: %s' % (query_name.title(), str(e)))
