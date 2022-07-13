@@ -10,7 +10,7 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
     if prod:
         download_data = True
         preprocess = True
-        create_files=True
+        create_files = True
         send_mail = True  
     
     logger = getLogger('standard')

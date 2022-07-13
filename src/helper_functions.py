@@ -203,8 +203,8 @@ def datetime_from_horario_protocolo(df, coluna_horario):
     df_['horas_texto'] = df_[coluna_horario].apply(lambda x: x[:2] if x[2]==':' else x[:1]).astype(int)
     df_['minutos_texto'] = df_[coluna_horario].apply(lambda x: x[3:5] if x[2]==':' else x[2:4]).astype(int)
     df_['horario_texto'] = df_['horas_texto'] + df_['minutos_texto']/10
-    df_.loc[df_['horario_texto'] < df_['horario_texto'], 'dia_real'] = to_datetime((df_['DT_LIBERACAO_ENF'] - Timedelta(days=1)).dt.date)
-    df_.loc[df_['horario_texto'] >= df_['horario_texto'], 'dia_real'] = to_datetime(df_['DT_LIBERACAO_ENF'].dt.date)
+    df_.loc[df_['horario_texto'] > df_['horario_liberacao'], 'dia_real'] = to_datetime((df_['DT_LIBERACAO_ENF'] - Timedelta(days=1)).dt.date)
+    df_.loc[df_['horario_texto'] <= df_['horario_liberacao'], 'dia_real'] = to_datetime(df_['DT_LIBERACAO_ENF'].dt.date)
     
     df_['data_hora_real'] = df_[['dia_real', 'horas_texto', 'minutos_texto']].apply(
         lambda x: x[0] + Timedelta(hours=x[1]) + Timedelta(minutes=x[2]),
