@@ -147,7 +147,7 @@ def gather_info_for_worksheets():
     return df_main, evol_med_coletados, evol_enf_coletados, prescricoes_coletados, movimentacoes_coletados, hemocultura_coletados, antibiotico_coletados
 
 
-def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
+def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo, df_enf):
     from src.helper_functions import format_hours_deltatime
     df_main, df_mov, df_antib, df_hemo = df_main.copy(), df_mov.copy(), df_antib.copy(), df_hemo.copy()
     df0 = df_main[['Número de Atendimento', 'Nome do paciente', 'Prontuário', 'Condição de saída',
@@ -188,8 +188,16 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
                     left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left') 
     df3 = df3.sort_values('DT_ENTRADA_UNIDADE').drop_duplicates(subset=['Número de Atendimento'], keep='first')\
         .drop('NR_ATENDIMENTO', axis=1).sort_index().copy()
+        
+        
+    df4 = df3.merge(
+        df_enf[['NR_ATENDIMENTO',
+                'Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)',
+                'Data e hora da administração do antibiótico (Anotação padrão do Protocolo)']],
+        left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
+    df4.drop('NR_ATENDIMENTO', axis=1, inplace=True)
 
-    df3.rename(columns={'DT_ENTRADA_UNIDADE': 'Data e hora da primeira admissão à UTI',
+    df4.rename(columns={'DT_ENTRADA_UNIDADE': 'Data e hora da primeira admissão à UTI',
                         'DT_SAIDA_UNIDADE': 'Data e hora da primeira saída da UTI',
                         'Menor data de evolução médica com palavra relacionada a sepse':"Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático)"}, inplace=True) 
     
@@ -207,11 +215,13 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
                             'Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático)',
                             'Data e hora da prescrição da hemocultura (preenchimento automático)', 'Data e hora da liberação da hemocultura (preenchimento automático)',
                             'Data e hora da coleta da da hemocultura',
+                            'Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)',
                             'Hemocultura antes do ATB', 'Tempo (em horas) entre prescrição e liberação da HMC (preenchimento automático)',
                             'Data e hora da prescrição do antibiótico (preenchimento automático)',
                             'Data e hora da liberação da prescrição do antibiótico (preenchimento automático)',
                             'Tempo entre diagnóstico e prescrição médica',
                             'Data e hora da administração do antibiótico (preenchimento automático)',
+                            'Data e hora da administração do antibiótico (Anotação padrão do Protocolo)',
                             'Tempo em minutos - Diagnóstico e administração',
                             'Administração ATB em até 1 hora', 'Nome do antibiótico utilizado (preenchimento automático)',
                             'Paciente oncológico? (sim/não)',
@@ -220,8 +230,8 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo):
                             'Resultado de SAPS III da admissão da UTI',
                             'Paciente teve diagnóstico de COVID nessa internação? (sim/não)']
     
-    df3 = df3.reindex(columns=qualidade_final_columns)
-    return df3
+    df4 = df4.reindex(columns=qualidade_final_columns)
+    return df4
 
 
 def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_movimentacoes, df_hemocultura, df_antibiotico):
@@ -231,7 +241,7 @@ def create_excel_files(df_main, df_evol_med, df_evol_enf, df_prescricoes, df_mov
     
     logger = getLogger('standard')
 
-    df_equipe_sepse = create_df_equipe_sepse(df_main, df_movimentacoes, df_antibiotico, df_hemocultura)
+    df_equipe_sepse = create_df_equipe_sepse(df_main, df_movimentacoes, df_antibiotico, df_hemocultura, df_evol_enf)
     
     n_atends_paulista = df_main[df_main['Unidade'] == 'Paulista']['Número de Atendimento'].unique().tolist()
     n_atends_vergueiro = df_main[df_main['Unidade'] == 'Vergueiro']['Número de Atendimento'].unique().tolist()
