@@ -154,7 +154,7 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo, df_enf):
                    'Data e hora da admissão no Hospital', 'Data e hora da saída hospitalar', 'Menor data de evolução médica com palavra relacionada a sepse']].copy()
     df0['Tempo de permanência hospitalar'] = df0['Data e hora da saída hospitalar'] - df0['Data e hora da admissão no Hospital']
     total_seconds_in_a_day = 60 * 60 * 24
-    df0['Tempo de permanência hospitalar'] = (df0['Tempo de permanência hospitalar'].dt.total_seconds() / total_seconds_in_a_day).round(2)
+    df0['Tempo de permanência hospitalar'] = (df0['Tempo de permanência hospitalar'].dt.total_seconds() / total_seconds_in_a_day).round(1)
     
     pacientes_antib = df_antib[['NR_ATENDIMENTO', 'DT_PRESCRICAO até 48h antes ou depois']].groupby('NR_ATENDIMENTO').sum()
     pacientes_antib_48 = pacientes_antib[pacientes_antib['DT_PRESCRICAO até 48h antes ou depois'] != 0].index
