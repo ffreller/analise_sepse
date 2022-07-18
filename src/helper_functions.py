@@ -184,6 +184,7 @@ def format_hours_deltatime(number):
     
     return final_str+'{:02}:{:02}:{:02}'.format(int(number), int(minutes), int(seconds))
 
+
 def extract_horario_from_text(regex_string, text):
     if not isinstance(text, str):
         return ""
@@ -206,9 +207,6 @@ def datetime_from_horario_protocolo(df, coluna_horario):
     df_['horario_texto'] = df_['horas_texto'] + df_['minutos_texto']/60
     df_['dia_real'] = df_['DT_LIBERACAO_ENF'].copy()
     df_.loc[df_['horario_texto'] > df_['horario_liberacao'], 'dia_real'] = df_['dia_real'] - Timedelta(days=1)
-    print(df_.dtypes)
-    print(len(df_.loc[df_['horario_texto'] > df_['horario_liberacao']]))
-    
     df_['data_hora_real'] = df_[['dia_real', 'horas_texto', 'minutos_texto']].apply(
         lambda x: datetime(year=x[0].year, month=x[0].month, day=x[0].day, hour=x[1], minute=x[2]),
         axis=1

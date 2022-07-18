@@ -69,14 +69,11 @@ def retrieve_data_from_dbtasy_using_dates(start_date, end_date):
     from logging import getLogger
     from src.definitions import RAW_DATA_DIR
     
-    logger = getLogger('standard')
-    error_logger = getLogger('error')
-    
+    logger = getLogger('standard')    
     logger.debug("Baixando dados do DB_TASY: De %s até %s" % (start_date, end_date))
     queries = read_queries_from_file()
     sqlalchemy_engine = create_sqlalchemy_engine('tasy')
     conn_cxOracle = create_conn_cxOracle('tasy')
-    success = True
     for query_name in queries.keys():
         query = queries[query_name]
         assert 'DATE_TO_REPLACE_START' in query, "Sem data início para substituir"
@@ -91,16 +88,13 @@ def retrieve_data_from_dbtasy_using_dates(start_date, end_date):
                 if 'enfermagem' in query_name.lower():
                     cols += ['DS_SETOR_ATENDIMENTO', 'NM_CURTO']
                 df = execute_query_cxOracle_and_load_to_df(query, conn_cxOracle, columns=cols)
-        except Exception as e:
-            logger.error('Erro ao excecutar query %s: %s' % (query_name.title(), str(e)))
-            error_logger.error('Erro ao excecutar query %s: %s' % (query_name.title(), str(e)))
-            success = False
-        if success:
-            logger.debug("Query '%s' baixada com sucesso" % query_name.title())
-            df.to_pickle(RAW_DATA_DIR/f"{query_name.title().replace(' ', '_')}.pickle")
+        except Exception:
+            return False, query_name
+        logger.debug("Query '%s' baixada com sucesso" % query_name.title())
+        df.to_pickle(RAW_DATA_DIR/f"{query_name.title().replace(' ', '_')}.pickle")
     sqlalchemy_engine.dispose()
     conn_cxOracle.close()
-    return success
+    return True, ""
 
 
 # Script para baixar dados do mês passado HAOC_TASY_PROD

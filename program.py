@@ -19,13 +19,11 @@ def ExecuteProgram(prod, download_data=True, preprocess=True, create_files=True,
     
     success = True        
     if download_data:
-        try:
-            success = retrieve_last_month_data_from_dbtasy()
-            # success = retrieve_specific_dates_from_dbtasy('14/06/2021', '14/01/2022') 
-        except:
-            logger.error('Erro na comunicação com o DB: %s' % format_exc())
-            error_logger.error('Erro na comunicação com o DB: %s' % format_exc())
-            return       
+        success, query_name = retrieve_last_month_data_from_dbtasy()
+        if not success:
+            logger.error('Erro na comunicação com o DB (tabela: %s): %s' % (query_name, format_exc()))
+            error_logger.error('Erro na comunicação com o DB (tabela: %s): %s' % (query_name, format_exc()))
+            return    
     
     if success:
         if preprocess:
