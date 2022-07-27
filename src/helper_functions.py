@@ -1,6 +1,3 @@
-from lib2to3.pgen2.token import MINUS
-
-
 def campo_sepse_med(text):
     if isinstance(text, str):
         if "Sepse :" in text:
@@ -114,7 +111,7 @@ def apply_rtf_and_bold_expression(text, all_expressions):
         if (expression == 'NÃO') or ('?' in expression) or ('suspeita' in expression):
             continue
         if expression in new_text:
-            new_text = new_text.replace(expression, f"\\cf2\\b {expression} \\b0\\cf'")
+            new_text = new_text.replace(expression, f"\\cf2\\b {expression}\\b0\\cf ")
             expression_found = True
     return new_text if expression_found else text
 
@@ -193,7 +190,7 @@ def extract_horario_from_text(regex_string, text):
     matches  = findall(pattern, text)
     if not matches:
         return "NO MATCH"
-    match = matches[0].replace("_", "")
+    match = matches[0].replace("_", "").replace(" ", "")
     return match
 
 
@@ -202,8 +199,8 @@ def datetime_from_horario_protocolo(df, coluna_horario):
     from datetime import datetime
     df_ = df.copy()
     df_['horario_liberacao'] = df_['DT_LIBERACAO_ENF'].dt.hour.astype(float) + df_['DT_LIBERACAO_ENF'].dt.minute.astype(int)/60
-    df_['horas_texto'] = df_[coluna_horario].apply(lambda x: x[:2] if x[2]==':' else x[:1]).astype(int)
-    df_['minutos_texto'] = df_[coluna_horario].apply(lambda x: x[3:5] if x[2]==':' else x[2:4]).astype(int)
+    df_['horas_texto'] = df_[coluna_horario].apply(lambda x: x[:2] if x[2]==':' else x[:1]).astype(int, errors="ignore")
+    df_['minutos_texto'] = df_[coluna_horario].apply(lambda x: x[3:5] if x[2]==':' else x[2:4]).astype(int, errors="ignore")
     df_['horario_texto'] = df_['horas_texto'] + df_['minutos_texto']/60
     df_['dia_real'] = df_['DT_LIBERACAO_ENF'].copy()
     df_.loc[df_['horario_texto'] > df_['horario_liberacao'], 'dia_real'] = df_['dia_real'] - Timedelta(days=1)

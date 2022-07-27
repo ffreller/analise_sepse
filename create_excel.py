@@ -162,11 +162,17 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo, df_enf):
     
     df_antib = df_antib[df_antib['DT_PRESCRICAO até 48h antes ou depois'] == True].copy()
     df_antib['abs_diff'] = df_antib['Diferença em horas entre DT_PRESCRICAO e menor data de evolução médica com palavra relacionada a sepse'].abs()
-    df_antib.sort_values('abs_diff', inplace=True)
-    df_antib.drop_duplicates(subset=['NR_ATENDIMENTO'], inplace=True, keep='first')
-    df1 = df0.merge(df_antib[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_ADMINISTRACAO', 'DT_LIBERACAO', 'DS_PRINCIPIO_ATIVO']],
-                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
-    df1.drop(columns=['NR_ATENDIMENTO'], inplace=True)
+    df_antib_smallest_diff = df_antib.sort_values('abs_diff').drop_duplicates(subset=['NR_ATENDIMENTO'], keep='first')
+    
+    df_antib_primeira_prescr = df_antib.groupby(['NR_ATENDIMENTO', "DS_PRINCIPIO_ATIVO"]).agg({"DT_PRESCRICAO":"min"}).reset_index()
+    df_antib_primeira_prescr.rename(columns={"DT_PRESCRICAO":"Menor data da prescrição desse antibiótico para esse paciente"}, inplace=True)
+    
+    df1 = df0.merge(df_antib_smallest_diff[['NR_ATENDIMENTO', 'DT_PRESCRICAO', 'DT_ADMINISTRACAO', 'DT_LIBERACAO', 'DS_PRINCIPIO_ATIVO']],
+                    left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')\
+                        .drop(columns=['NR_ATENDIMENTO'])
+    df1 = df1.merge(df_antib_primeira_prescr,
+                    left_on=['Número de Atendimento', 'DS_PRINCIPIO_ATIVO'], right_on=['NR_ATENDIMENTO', 'DS_PRINCIPIO_ATIVO'], how="left")\
+                        .drop(columns=['NR_ATENDIMENTO'])
     df1.rename(columns={'DT_PRESCRICAO':'Data e hora da prescrição do antibiótico (preenchimento automático)',
                         'DT_ADMINISTRACAO':'Data e hora da administração do antibiótico (preenchimento automático)',
                         'DT_LIBERACAO': 'Data e hora da liberação da prescrição do antibiótico (preenchimento automático)',
@@ -193,7 +199,8 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo, df_enf):
     df4 = df3.merge(
         df_enf[['NR_ATENDIMENTO',
                 'Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)',
-                'Data e hora da administração do antibiótico (Anotação padrão do Protocolo)']],
+                'Data e hora da administração do antibiótico (Anotação padrão do Protocolo)',
+                "Data e hora da avaliação médica (Anotação padrão do Protocolo)"]],
         left_on='Número de Atendimento', right_on='NR_ATENDIMENTO', how='left')
     df4.drop('NR_ATENDIMENTO', axis=1, inplace=True)
 
@@ -213,10 +220,12 @@ def create_df_equipe_sepse(df_main, df_mov, df_antib, df_hemo, df_enf):
                             'Paciente eletivo para Indicador de Letalidade? (sim/não)',
                             'Local do diagnóstico',
                             'Data e hora do diagnóstico de sepse/ Abertura do Protocolo (preenchimento automático)',
+                            "Data e hora da avaliação médica (Anotação padrão do Protocolo)",
                             'Data e hora da prescrição da hemocultura (preenchimento automático)', 'Data e hora da liberação da hemocultura (preenchimento automático)',
-                            'Data e hora da coleta da da hemocultura',
+                            'Data e hora da coleta da hemocultura',
                             'Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)',
                             'Hemocultura antes do ATB', 'Tempo (em horas) entre prescrição e liberação da HMC (preenchimento automático)',
+                            "Menor data da prescrição desse antibiótico para esse paciente",
                             'Data e hora da prescrição do antibiótico (preenchimento automático)',
                             'Data e hora da liberação da prescrição do antibiótico (preenchimento automático)',
                             'Tempo entre diagnóstico e prescrição médica',

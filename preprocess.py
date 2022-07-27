@@ -79,19 +79,23 @@ def preprocess_evolucao(enfermagem):
     if enfermagem:
         from src.helper_functions import extract_horario_from_text, datetime_from_horario_protocolo
         df0 = df0[df0['EVOLUCAO_ENF'].str.lower().str.contains('confirmação de protocolo sepse')].copy()
-        df0['EVOLUCAO_ENF'] = df0['EVOLUCAO_ENF'].replace('\u200b', '')
+        df0['EVOLUCAO_ENF'] = df0['EVOLUCAO_ENF'].str.replace('\u200b', '')
         regex_horario_hmc = "Horário da Coleta da Hemocultura: *([^A-Z]+)"
         regex_horario_adm_atb = "Horário da administração do antibiótico: *([^A-Z]+)(?=antibiótico)"
-        df0['Horário da Coleta da Hemocultura (extração automática de texto)'] = \
+        regex_horario_aval_medica = "(\d?\d_*:? *_*\d\d)_* *Horário da avaliação médica"
+
+        df0['Horário da coleta da hemocultura (extração automática de texto)'] = \
             df0['EVOLUCAO_ENF'].apply(lambda txt: extract_horario_from_text(regex_horario_hmc, txt))
         df0['Horário da administração do antibiótico (extração automática de texto)'] =\
             df0['EVOLUCAO_ENF'].apply(lambda txt: extract_horario_from_text(regex_horario_adm_atb, txt))
+        df0['Horário da avaliação médica (extração automática de texto)'] =\
+            df0['EVOLUCAO_ENF'].apply(lambda txt: extract_horario_from_text(regex_horario_aval_medica, txt))
+
+        for new_col in ['Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)', 'Data e hora da administração do antibiótico (Anotação padrão do Protocolo)',
+                    'Data e hora da avaliação médica (Anotação padrão do Protocolo)']:
+            old_col = new_col.replace("Data e hora", "Horário").replace("Anotação padrão do Protocolo", "extração automática de texto")
+            df0.loc[df0[old_col] != "NO MATCH", new_col] = datetime_from_horario_protocolo(df0.loc[df0[old_col] != "NO MATCH"], old_col)
             
-        df0['Data e hora da coleta da hemocultura (Anotação padrão do Protocolo)'] = \
-            datetime_from_horario_protocolo(df0, "Horário da Coleta da Hemocultura (extração automática de texto)")
-            
-        df0['Data e hora da administração do antibiótico (Anotação padrão do Protocolo)'] = \
-            datetime_from_horario_protocolo(df0, 'Horário da administração do antibiótico (extração automática de texto)') 
         df0['TEMPLATE_ENF'] = 1
     else:
         from src.helper_functions import text_contains_expression, campo_sepse_med, remove_campo_sepse_from_text_med,\
@@ -129,7 +133,7 @@ def preprocess_evolucao(enfermagem):
 
     
 if __name__ == '__main__':
-    preprocess_base()
-    preprocess_prescricoes()
-    preprocess_evolucao(enfermagem=False)
+    # preprocess_base()
+    # preprocess_prescricoes()
+    # preprocess_evolucao(enfermagem=False)
     preprocess_evolucao(enfermagem=True)
